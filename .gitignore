@@ -1,0 +1,12 @@
+#directories
+.gradle
+.settings
+bin
+build
+eclipse
+
+#files
+.classpath
+.project
+forge*changelog.txt
+README.txt
