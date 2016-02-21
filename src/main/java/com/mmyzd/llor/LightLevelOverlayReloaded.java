@@ -22,7 +22,7 @@ import cpw.mods.fml.common.gameevent.InputEvent.KeyInputEvent;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
-@Mod(modid = LightLevelOverlayReloaded.MODID, useMetadata = true, guiFactory="com.mmyzd.llor.GuiFactory")
+@Mod(modid = LightLevelOverlayReloaded.MODID, useMetadata = true, guiFactory = "com.mmyzd.llor.GuiFactory")
 public class LightLevelOverlayReloaded {
 	
 	public static final String MODID = "llor";
