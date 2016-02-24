@@ -55,8 +55,8 @@ public class LightLevelOverlayReloaded {
 	@SideOnly(Side.CLIENT)
     public void initialize(FMLInitializationEvent evt) {
 		MinecraftForge.EVENT_BUS.register(this);
-		MinecraftForge.EVENT_BUS.register(config);
 		FMLCommonHandler.instance().bus().register(this);
+		FMLCommonHandler.instance().bus().register(config);
 		renderer = new OverlayRenderer();
 		poller = new OverlayPoller();
 		active = false;
