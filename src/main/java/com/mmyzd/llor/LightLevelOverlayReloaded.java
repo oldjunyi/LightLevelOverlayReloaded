@@ -1,7 +1,5 @@
 package com.mmyzd.llor;
 
-import java.io.File;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.settings.KeyBinding;
@@ -17,7 +15,6 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.InputEvent.KeyInputEvent;
 
 import org.lwjgl.input.Keyboard;
-
 
 @Mod(modid = LightLevelOverlayReloaded.MODID, useMetadata = true, clientSideOnly = true, guiFactory = "com.mmyzd.llor.GuiFactory")
 public class LightLevelOverlayReloaded {
@@ -64,7 +61,6 @@ public class LightLevelOverlayReloaded {
     
 	@SubscribeEvent
 	public void onKeyInputEvent(KeyInputEvent evt) {
-		EntityPlayerSP player = Minecraft.getMinecraft().thePlayer;
 		if (hotkey.isPressed()) {
 			if (active && (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) || Keyboard.isKeyDown(Keyboard.KEY_RSHIFT))) {
 				config.useSkyLight.set(!config.useSkyLight.getBoolean());
@@ -82,9 +78,9 @@ public class LightLevelOverlayReloaded {
 		if (active) {
 			EntityPlayerSP player = Minecraft.getMinecraft().thePlayer;
 			if (player == null) return;
-			double x = player.lastTickPosX + (player.posX - player.lastTickPosX) * evt.partialTicks;
-	        double y = player.lastTickPosY + (player.posY - player.lastTickPosY) * evt.partialTicks;
-	        double z = player.lastTickPosZ + (player.posZ - player.lastTickPosZ) * evt.partialTicks;
+			double x = player.lastTickPosX + (player.posX - player.lastTickPosX) * evt.getPartialTicks();
+	        double y = player.lastTickPosY + (player.posY - player.lastTickPosY) * evt.getPartialTicks();
+	        double z = player.lastTickPosZ + (player.posZ - player.lastTickPosZ) * evt.getPartialTicks();
 	        renderer.render(x, y, z, poller.overlays);
 		}
 	}
