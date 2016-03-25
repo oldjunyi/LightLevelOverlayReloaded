@@ -20,8 +20,7 @@ plugins {
     id "net.minecraftforge.gradle.forge" version "2.0.2"
 }
 */
-
-version = "1.0.5-mc1.8.9"
+version = "1.0.7-mc1.8.9"
 group = "com.mmyzd.llor"
 archivesBaseName = "LLOverlayReloaded"
 
@@ -29,9 +28,8 @@ sourceCompatibility = 1.6
 targetCompatibility = 1.6
 compileJava.options.encoding = 'UTF-8'
 
-
 minecraft {
-    version = "1.8.9-11.15.1.1756"
+    version = "1.8.9-11.15.1.1808"
     runDir = "run"
     
     // the mappings can be changed at any time, and must be in the following format.
