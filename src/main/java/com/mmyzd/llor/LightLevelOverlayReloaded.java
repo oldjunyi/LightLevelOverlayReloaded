@@ -1,7 +1,5 @@
 package com.mmyzd.llor;
 
-import java.io.File;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.settings.KeyBinding;
@@ -81,7 +79,6 @@ public class LightLevelOverlayReloaded {
 	@SubscribeEvent
 	@SideOnly(Side.CLIENT)
 	public void onKeyInputEvent(KeyInputEvent evt) {
-		EntityPlayerSP player = Minecraft.getMinecraft().thePlayer;
 		if (hotkey.isPressed()) {
 			if (active && (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) || Keyboard.isKeyDown(Keyboard.KEY_RSHIFT))) {
 				config.useSkyLight.set(!config.useSkyLight.getBoolean());

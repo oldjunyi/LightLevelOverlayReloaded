@@ -1,13 +1,11 @@
 package com.mmyzd.llor;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.init.Blocks;
-import net.minecraft.util.EnumFacing;
 import net.minecraft.world.EnumSkyBlock;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraftforge.common.util.ForgeDirection;
@@ -36,7 +34,7 @@ public class OverlayPoller extends Thread {
 			overlays = new ArrayList[size * 2 + 1][size * 2 + 1];
 			for (int i = 0; i < overlays.length; i++)
 			for (int j = 0; j < overlays[i].length; j++)
-				overlays[i][j] = new ArrayList();
+				overlays[i][j] = new ArrayList<Overlay>();
 		}
 		return size;
 	}
