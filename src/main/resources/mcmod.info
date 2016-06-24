@@ -1,0 +1,16 @@
+[
+{
+  "modid": "llor",
+  "name": "Light Level Overlay Reloaded",
+  "description": "A mod visualizes the light level on top of blocks.",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "www.mmyzd.com",
+  "updateUrl": "",
+  "authorList": ["oldjunyi"],
+  "credits": "Thanks to 4poc for his original version.",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]
