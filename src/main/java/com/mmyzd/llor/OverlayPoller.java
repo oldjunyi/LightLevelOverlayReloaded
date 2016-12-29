@@ -46,19 +46,19 @@ public class OverlayPoller extends Thread {
 	private void updateLightLevel(int radius, int chunkRadius) {
 		
 		Minecraft mc = Minecraft.getMinecraft();
-		if (mc.thePlayer == null) return;
+		if (mc.player == null) return;
 		
-		WorldClient world = mc.theWorld;
-		int playerPosY = (int)Math.floor(mc.thePlayer.posY);
-		int playerChunkX = mc.thePlayer.chunkCoordX;
-		int playerChunkZ = mc.thePlayer.chunkCoordZ; 
+		WorldClient world = mc.world;
+		int playerPosY = (int)Math.floor(mc.player.posY);
+		int playerChunkX = mc.player.chunkCoordX;
+		int playerChunkZ = mc.player.chunkCoordZ; 
 		int skyLightSub = world.calculateSkylightSubtracted(1.0f);
 		int displayMode = LightLevelOverlayReloaded.instance.config.displayMode.getInt();
 		boolean useSkyLight = LightLevelOverlayReloaded.instance.config.useSkyLight.getBoolean();
 		
 		for (int chunkX = playerChunkX - radius; chunkX <= playerChunkX + radius; chunkX++)
 		for (int chunkZ = playerChunkZ - radius; chunkZ <= playerChunkZ + radius; chunkZ++) {
-			Chunk chunk = mc.theWorld.getChunkFromChunkCoords(chunkX, chunkZ);
+			Chunk chunk = mc.world.getChunkFromChunkCoords(chunkX, chunkZ);
 			if (!chunk.isLoaded()) continue;
 			ArrayList<Overlay> buffer = new ArrayList<Overlay>();
 			for (int offsetX = 0; offsetX < 16; offsetX++)

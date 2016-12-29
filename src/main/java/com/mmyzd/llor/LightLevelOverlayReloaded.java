@@ -21,7 +21,7 @@ import org.lwjgl.input.Keyboard;
 	modid = LightLevelOverlayReloaded.MODID,
 	useMetadata = true,
 	clientSideOnly = true, guiFactory = "com.mmyzd.llor.GuiFactory",
-	acceptedMinecraftVersions = "[1.9,1.11]"
+	acceptedMinecraftVersions = "[1.11.2,1.11.2]"
 )
 public class LightLevelOverlayReloaded {
 	
@@ -93,7 +93,7 @@ public class LightLevelOverlayReloaded {
 	@SubscribeEvent
 	public void onRenderWorldLastEvent(RenderWorldLastEvent event) {
 		if (active) {
-			EntityPlayerSP player = Minecraft.getMinecraft().thePlayer;
+			EntityPlayerSP player = Minecraft.getMinecraft().player;
 			if (player == null) return;
 			double x = player.lastTickPosX + (player.posX - player.lastTickPosX) * event.getPartialTicks();
 	        double y = player.lastTickPosY + (player.posY - player.lastTickPosY) * event.getPartialTicks();
