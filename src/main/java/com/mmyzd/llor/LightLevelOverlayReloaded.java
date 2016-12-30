@@ -17,34 +17,29 @@ import net.minecraftforge.fml.common.gameevent.InputEvent.KeyInputEvent;
 
 import org.lwjgl.input.Keyboard;
 
-@Mod(
-	modid = LightLevelOverlayReloaded.MODID,
-	useMetadata = true,
-	clientSideOnly = true, guiFactory = "com.mmyzd.llor.GuiFactory",
-	acceptedMinecraftVersions = "[1.11.2,1.11.2]"
-)
+@Mod(modid = LightLevelOverlayReloaded.MODID, useMetadata = true, clientSideOnly = true, guiFactory = "com.mmyzd.llor.GuiFactory")
 public class LightLevelOverlayReloaded {
-	
+
 	public static final String MODID = "llor";
-	
+
 	@Instance(MODID)
 	public static LightLevelOverlayReloaded instance;
-    
-    public OverlayRenderer renderer;
-    public OverlayPoller poller;
-    public ConfigManager config;
-    public boolean active;
-    public KeyBinding hotkey;
-    public String message;
-    public double messageRemainingTicks;
-    
-    @EventHandler
-    public void preInit(FMLPreInitializationEvent evt) {
-    	config = new ConfigManager(evt.getModConfigurationDirectory());
-    }
-    
+
+	public OverlayRenderer renderer;
+	public OverlayPoller poller;
+	public ConfigManager config;
+	public boolean active;
+	public KeyBinding hotkey;
+	public String message;
+	public double messageRemainingTicks;
+
 	@EventHandler
-    public void initialize(FMLInitializationEvent evt) {
+	public void preInit(FMLPreInitializationEvent evt) {
+		config = new ConfigManager(evt.getModConfigurationDirectory());
+	}
+
+	@EventHandler
+	public void initialize(FMLInitializationEvent evt) {
 		MinecraftForge.EVENT_BUS.register(this);
 		MinecraftForge.EVENT_BUS.register(config);
 		renderer = new OverlayRenderer();
@@ -53,11 +48,12 @@ public class LightLevelOverlayReloaded {
 		hotkey = new KeyBinding("key.llor.hotkey", Keyboard.KEY_F4, "key.categories.llor");
 		ClientRegistry.registerKeyBinding(hotkey);
 		launchPoller();
-    }
-	
+	}
+
 	private void launchPoller() {
 		for (int i = 0; i < 3; i++) {
-			if (poller.isAlive()) return;
+			if (poller.isAlive())
+				return;
 			try {
 				poller.start();
 			} catch (Exception e) {
@@ -66,19 +62,19 @@ public class LightLevelOverlayReloaded {
 			}
 		}
 	}
-    
+
 	@SubscribeEvent
 	public void onKeyInputEvent(KeyInputEvent event) {
-		boolean withShift = Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)   || Keyboard.isKeyDown(Keyboard.KEY_RSHIFT);
-		boolean withCtrl  = Keyboard.isKeyDown(Keyboard.KEY_LCONTROL) || Keyboard.isKeyDown(Keyboard.KEY_RCONTROL);
-		boolean withAlt   = Keyboard.isKeyDown(Keyboard.KEY_LMENU)    || Keyboard.isKeyDown(Keyboard.KEY_RMENU);
+		boolean withShift = Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) || Keyboard.isKeyDown(Keyboard.KEY_RSHIFT);
+		boolean withCtrl = Keyboard.isKeyDown(Keyboard.KEY_LCONTROL) || Keyboard.isKeyDown(Keyboard.KEY_RCONTROL);
+		boolean withAlt = Keyboard.isKeyDown(Keyboard.KEY_LMENU) || Keyboard.isKeyDown(Keyboard.KEY_RMENU);
 		if (hotkey.isPressed()) {
 			if (active && withShift && !withCtrl) {
 				boolean useSkyLight = !config.useSkyLight.getBoolean();
 				config.useSkyLight.set(useSkyLight);
 				message = "Light Level Overlay: " + (useSkyLight ? "Block Light + Sky Light" : "Block Light Only");
 				messageRemainingTicks = 40;
-			} else if (active && withCtrl && !withShift){
+			} else if (active && withCtrl && !withShift) {
 				int mode = (config.displayMode.getInt() + 1) % 3;
 				config.displayMode.set(mode);
 				message = "Light Level Overlay: " + config.displayModeName.get(mode) + " Mode";
@@ -89,19 +85,20 @@ public class LightLevelOverlayReloaded {
 			}
 		}
 	}
-	
+
 	@SubscribeEvent
 	public void onRenderWorldLastEvent(RenderWorldLastEvent event) {
 		if (active) {
 			EntityPlayerSP player = Minecraft.getMinecraft().player;
-			if (player == null) return;
+			if (player == null)
+				return;
 			double x = player.lastTickPosX + (player.posX - player.lastTickPosX) * event.getPartialTicks();
-	        double y = player.lastTickPosY + (player.posY - player.lastTickPosY) * event.getPartialTicks();
-	        double z = player.lastTickPosZ + (player.posZ - player.lastTickPosZ) * event.getPartialTicks();
-	        renderer.render(x, y, z, poller.overlays);
+			double y = player.lastTickPosY + (player.posY - player.lastTickPosY) * event.getPartialTicks();
+			double z = player.lastTickPosZ + (player.posZ - player.lastTickPosZ) * event.getPartialTicks();
+			renderer.render(x, y, z, poller.overlays);
 		}
 	}
-	
+
 	@SubscribeEvent
 	public void onRenderGameOverlayEventText(RenderGameOverlayEvent.Text event) {
 		if (messageRemainingTicks > 0) {
@@ -109,5 +106,5 @@ public class LightLevelOverlayReloaded {
 			event.getLeft().add(message);
 		}
 	}
-	
+
 }
