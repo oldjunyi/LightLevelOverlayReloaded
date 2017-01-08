@@ -1,16 +1,15 @@
-[
 {
-  "modid": "llor",
-  "name": "Light Level Overlay Reloaded",
-  "description": "A mod visualizes the light level on top of blocks.",
-  "version": "${version}",
-  "mcversion": "${mcversion}",
-  "url": "www.mmyzd.com",
-  "updateUrl": "",
-  "authorList": ["oldjunyi"],
-  "credits": "Thanks to 4poc for his original version.",
-  "logoFile": "",
-  "screenshots": [],
-  "dependencies": []
+  "modListVersion": 2,
+  "modList": [{
+    "modid": "llor",
+    "name": "Light Level Overlay Reloaded",
+    "description": "A Minecraft mod that visualizes the light level on top of blocks.",
+    "version": "${version}",
+    "mcversion": "${mcversion}",
+    "url": "https://minecraft.curseforge.com/projects/light-level-overlay-reloaded",
+    "updateUrl": "",
+    "authorList": [ "oldjunyi" ],
+    "credits": "Thanks to 4poc for his original version.",
+    "logoFile": "assets/llor/llor.png"
+  }]
 }
-]
