@@ -1,7 +1,7 @@
 <p align="center"><img src="https://github.com/SnowShock35/LightLevelOverlayReloaded/blob/1.11.2/src/main/resources/assets/llor/llor.png?raw=true" alt="Light Level Overlay Reloaded" height="400" width="400" /></p>
 <h1 align="center">Light Level Overlay Reloaded</h1>
 <p align="center"><em>A Minecraft mod that visualizes the light level on top of blocks.</em></p>
-
+<p>&nbsp;</p>
 <p>Light Level Overlay was&nbsp;originally created by 4poc (in minecraft 1.6.4 and earlier).&nbsp;<a href="http://www.minecraftforum.net/forums/mapping-and-modding/minecraft-mods/1284971-light-level-overlay" rel="nofollow">http://www.minecraftforum.net/forums/mapping-and-modding/minecraft-mods/1284971-light-level-overlay</a></p>
 <p>Since he did not update the mod for a long time, I decided to re-implement it. So I made a mod called "Light Level Overlay Reloaded".</p>
 <p><img src="http://i.imgur.com/cv3y239.png" alt="Light Level" width="870" height="519"></p>
