@@ -1,16 +1,15 @@
-[
 {
-  "modid": "llor",
-  "name": "Light Level Overlay Reloaded",
-  "description": "A mod visualizes the light level on top of blocks.",
-  "version": "${version}",
-  "mcversion": "${mcversion}",
-  "url": "www.mmyzd.com",
-  "updateUrl": "",
-  "authorList": ["oldjunyi"],
-  "credits": "Thanks to 4poc for his original version.",
-  "logoFile": "",
-  "screenshots": [],
-  "dependencies": []
+  "modListVersion": 2,
+  "modList": [{
+    "modid": "llor",
+    "name": "Light Level Overlay Reloaded",
+    "description": "Light Level Overlay Reloaded is a small, but useful utilitiy mod that adds a key binding allowing you to toggle a block overlay that visualizes sky/block light level of blocks within a small range around the player. The default assigned key binding is the F4 key (Configurable).",
+    "version": "${version}",
+    "mcversion": "${mcversion}",
+    "url": "https://minecraft.curseforge.com/projects/light-level-overlay-reloaded",
+    "updateUrl": "",
+    "authorList": [ "oldjunyi" ],
+    "credits": "Thanks to 4poc for his original version.",
+    "logoFile": "assets/llor/llor.png"
+  }]
 }
-]
