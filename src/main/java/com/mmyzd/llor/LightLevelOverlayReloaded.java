@@ -79,6 +79,23 @@ public class LightLevelOverlayReloaded {
 				config.displayMode.set(mode);
 				message = "Light Level Overlay: " + config.displayModeName.get(mode) + " Mode";
 				messageRemainingTicks = 40;
+			} else if (active && withCtrl && withShift) {
+				if(config.focusCoordinate.getString() == null || config.focusCoordinate.getString().isEmpty()) {
+					Minecraft mc = Minecraft.getMinecraft();
+					int playerPosY = (int)Math.floor(mc.player.posY);
+					int playerPosX = (int)Math.floor(mc.player.posX);
+					int playerPosZ = (int)Math.floor(mc.player.posZ); 
+					String focusCoordinate = playerPosX + "," + playerPosY + "," + playerPosZ;
+					config.focusCoordinate.set(focusCoordinate);
+					config.showClosest.set(true);
+					message = "Light Level Overlay: Focus on: " + focusCoordinate;
+					messageRemainingTicks = 40;
+				} else {
+					config.focusCoordinate.set("");
+					config.showClosest.set(false);
+					message = "Light Level Overlay: Focus on: player";
+					messageRemainingTicks = 40;
+				}
 			} else if (!withShift && !withCtrl && !withAlt) {
 				active = !active;
 				launchPoller();

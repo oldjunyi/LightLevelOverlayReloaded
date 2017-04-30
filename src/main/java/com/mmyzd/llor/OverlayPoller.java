@@ -52,6 +52,32 @@ public class OverlayPoller extends Thread {
 		int playerPosY = (int)Math.floor(mc.player.posY);
 		int playerChunkX = mc.player.chunkCoordX;
 		int playerChunkZ = mc.player.chunkCoordZ; 
+		
+		// when we have a constant starting position we override the player position here.
+		String constantCoordinate = LightLevelOverlayReloaded.instance.config.focusCoordinate.getString();
+		if(constantCoordinate != null && !constantCoordinate.isEmpty()) {
+			String[] constantCoordinates = constantCoordinate.split(",");
+			if(constantCoordinates.length == 3) {
+				int newX = Integer.MIN_VALUE;
+				int newY = Integer.MIN_VALUE;
+				int newZ = Integer.MIN_VALUE;
+				try {
+					newX = Integer.parseInt(constantCoordinates[0]);
+					newY = Integer.parseInt(constantCoordinates[1]);
+					newZ = Integer.parseInt(constantCoordinates[2]);
+				} catch (NumberFormatException nfex) {
+					// that didn't work.
+				}
+				if(newZ > Integer.MIN_VALUE) { // conversion worked
+					playerPosY = newY;
+					playerChunkX = (int)Math.floor(newX / 16.0);
+					playerChunkZ = (int)Math.floor(newZ / 16.0);
+				}
+				// x, y -> / 16 & floor
+				// z -> /256 & floor
+			} // else its bogus
+		}
+		
 		int skyLightSub = world.calculateSkylightSubtracted(1.0f);
 		int displayMode = LightLevelOverlayReloaded.instance.config.displayMode.getInt();
 		boolean useSkyLight = LightLevelOverlayReloaded.instance.config.useSkyLight.getBoolean();
