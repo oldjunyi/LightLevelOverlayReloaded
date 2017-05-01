@@ -21,6 +21,7 @@ import org.lwjgl.input.Keyboard;
 public class LightLevelOverlayReloaded {
 
 	public static final String MODID = "llor";
+	private static final int TICKS_FOR_MESSAGE = 40;
 
 	@Instance(MODID)
 	public static LightLevelOverlayReloaded instance;
@@ -73,12 +74,12 @@ public class LightLevelOverlayReloaded {
 				boolean useSkyLight = !config.useSkyLight.getBoolean();
 				config.useSkyLight.set(useSkyLight);
 				message = "Light Level Overlay: " + (useSkyLight ? "Block Light + Sky Light" : "Block Light Only");
-				messageRemainingTicks = 40;
+				messageRemainingTicks = TICKS_FOR_MESSAGE;
 			} else if (active && withCtrl && !withShift) {
 				int mode = (config.displayMode.getInt() + 1) % 3;
 				config.displayMode.set(mode);
 				message = "Light Level Overlay: " + config.displayModeName.get(mode) + " Mode";
-				messageRemainingTicks = 40;
+				messageRemainingTicks = TICKS_FOR_MESSAGE;
 			} else if (active && withCtrl && withShift) {
 				if(config.focusCoordinate.getString() == null || config.focusCoordinate.getString().isEmpty()) {
 					Minecraft mc = Minecraft.getMinecraft();
@@ -89,12 +90,12 @@ public class LightLevelOverlayReloaded {
 					config.focusCoordinate.set(focusCoordinate);
 					config.showClosest.set(true);
 					message = "Light Level Overlay: Focus on: " + focusCoordinate;
-					messageRemainingTicks = 40;
+					messageRemainingTicks = TICKS_FOR_MESSAGE;
 				} else {
 					config.focusCoordinate.set("");
 					config.showClosest.set(false);
 					message = "Light Level Overlay: Focus on: player";
-					messageRemainingTicks = 40;
+					messageRemainingTicks = TICKS_FOR_MESSAGE;
 				}
 			} else if (!withShift && !withCtrl && !withAlt) {
 				active = !active;
@@ -122,6 +123,13 @@ public class LightLevelOverlayReloaded {
 			messageRemainingTicks -= event.getPartialTicks();
 			event.getLeft().add(message);
 		}
+		
+		if(LightLevelOverlayReloaded.instance.config.showClosest.getBoolean()) {
+			StringBuilder messageB = new StringBuilder("");
+			for(int ii = 0; ii < poller.counts.length; ii++) {
+				messageB.append(ii).append(": ").append(poller.counts[ii]).append(" -- ");
+			}
+			event.getRight().add(messageB.toString());
+		}
 	}
-
 }
