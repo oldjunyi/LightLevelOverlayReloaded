@@ -7,7 +7,12 @@ import net.minecraft.block.BlockRailBase;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.WorldClient;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.monster.EntityEnderman;
+import net.minecraft.entity.monster.EntitySpider;
+import net.minecraft.entity.monster.EntityZombie;
 import net.minecraft.init.Blocks;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.EnumSkyBlock;
@@ -21,6 +26,11 @@ public class OverlayPoller extends Thread {
 	
 	// counts is a new reference in each iteration, so its volitile-ness helps.
 	public volatile int[] counts = new int[8];
+	
+	public volatile int closestPosX = Integer.MIN_VALUE;
+	public volatile int closestPosY = Integer.MIN_VALUE;
+	public volatile int closestPosZ = Integer.MIN_VALUE;
+	public volatile double closestDistance = Integer.MAX_VALUE;
 	
 	@Override
 	public void run() {
@@ -58,9 +68,14 @@ public class OverlayPoller extends Thread {
 		
 		WorldClient world = mc.world;
 		int playerPosY = (int)Math.floor(mc.player.posY);
-		int playerChunkX = mc.player.chunkCoordX;
-		int playerChunkZ = mc.player.chunkCoordZ;
+		int playerPosX = (int)Math.floor(mc.player.posX);
+		int playerPosZ = (int)Math.floor(mc.player.posZ);
+		// we calculate from the player position except when focusCoordinate is given and meaningful.
+		int calcBasePosY = playerPosY;
+		int calcBaseChunkX =  mc.player.chunkCoordX;;
+		int calcBaseChunkZ = mc.player.chunkCoordZ;
 		boolean recountB = radius == chunkRadius; // only recount if all chunks are counted.
+		boolean fixedPosition = false;
 		
 		// when we have a constant starting position we override the player position here.
 		String constantCoordinate = LightLevelOverlayReloaded.instance.config.focusCoordinate.getString();
@@ -78,9 +93,10 @@ public class OverlayPoller extends Thread {
 					// that didn't work.
 				}
 				if(newZ > Integer.MIN_VALUE) { // conversion worked
-					playerPosY = newY;
-					playerChunkX = (int)Math.floor(newX / 16.0);
-					playerChunkZ = (int)Math.floor(newZ / 16.0);
+					calcBasePosY = newY;
+					calcBaseChunkX = (int)Math.floor(newX / 16.0);
+					calcBaseChunkZ = (int)Math.floor(newZ / 16.0);
+					fixedPosition = true;
 				}
 				// x, y -> / 16 & floor
 				// z -> /256 & floor
@@ -92,12 +108,18 @@ public class OverlayPoller extends Thread {
 		boolean useSkyLight = LightLevelOverlayReloaded.instance.config.useSkyLight.getBoolean();
 		
 		int[] recount = new int[counts.length];
-		for(int ii = 0; ii < recount.length; ii++) {
-			recount[ii] = 0;
+		int reClosestPosX = Integer.MIN_VALUE;
+		int reClosestPosY = Integer.MIN_VALUE;
+		int reClosestPosZ = Integer.MIN_VALUE;
+		double reClosestDistance = Integer.MAX_VALUE;
+		if(recountB) {
+			for(int ii = 0; ii < recount.length; ii++) {
+				recount[ii] = 0;
+			}
 		}
 		
-		for (int chunkX = playerChunkX - radius; chunkX <= playerChunkX + radius; chunkX++)
-			for (int chunkZ = playerChunkZ - radius; chunkZ <= playerChunkZ + radius; chunkZ++) {
+		for (int chunkX = calcBaseChunkX - radius; chunkX <= calcBaseChunkX + radius; chunkX++)
+			for (int chunkZ = calcBaseChunkZ - radius; chunkZ <= calcBaseChunkZ + radius; chunkZ++) {
 				Chunk chunk = mc.world.getChunkFromChunkCoords(chunkX, chunkZ);
 				if (!chunk.isLoaded()) continue;
 				ArrayList<Overlay> buffer = new ArrayList<Overlay>();
@@ -105,7 +127,8 @@ public class OverlayPoller extends Thread {
 					for (int offsetZ = 0; offsetZ < 16; offsetZ++) {
 						int posX = (chunkX << 4) + offsetX;
 						int posZ = (chunkZ << 4) + offsetZ;
-						int maxY = playerPosY + 4, minY = Math.max(playerPosY - 40, 0);
+						int maxY = (fixedPosition && calcBasePosY < 252 ? 256 : calcBasePosY + 4); // usually there are no structures above 256.
+						int minY = Math.max(calcBasePosY - 40, 0);
 						IBlockState preBlockState = null, curBlockState = chunk.getBlockState(offsetX, maxY, offsetZ);
 						Block preBlock = null, curBlock = curBlockState.getBlock();
 						BlockPos prePos = null, curPos = new BlockPos(posX, maxY, posZ);
@@ -116,13 +139,15 @@ public class OverlayPoller extends Thread {
 							curBlock = curBlockState.getBlock();
 							prePos = curPos;
 							curPos = new BlockPos(posX, posY, posZ);
+							
 							if (curBlock == Blocks.AIR ||
 								curBlock == Blocks.BEDROCK ||
 								curBlock == Blocks.BARRIER ||
 								preBlockState.isBlockNormalCube() ||
 								preBlockState.getMaterial().isLiquid() ||
 								preBlockState.canProvidePower() ||
-								curBlockState.isSideSolid(world, curPos, EnumFacing.UP) == false ||
+								!preBlockState.isTranslucent() || // no light from above, no care given.
+								!curBlockState.isSideSolid(world, curPos, EnumFacing.UP) || 
 								BlockRailBase.isRailBlock(preBlockState)) {
 								continue;
 							}
@@ -142,8 +167,20 @@ public class OverlayPoller extends Thread {
 								if (lightIndex >= 8) lightIndex += 32;
 							}
 							if (lightIndex >= 8 && lightIndex < 24) lightIndex ^= 16;
-							if(recountB && recount.length > lightIndex) // only count 8 and below.
+							if(recountB && recount.length > lightIndex) { // only count 8 and below.
+								// only count fields where something might spawn.
 								recount[lightIndex] ++;
+								//posX, posY, posZ
+								double distance = distanceTo(posX, posY, posZ, playerPosX, playerPosY, playerPosZ);
+								if(distance < 0)
+									distance = distance * -1;
+								if(distance < reClosestDistance) {
+									reClosestDistance = distance;
+									reClosestPosX = posX;
+									reClosestPosY = posY;
+									reClosestPosZ = posZ;
+								}
+							}
 							buffer.add(new Overlay(posX, posY + offsetY + 1, posZ, lightIndex));
 						}
 					}
@@ -153,8 +190,16 @@ public class OverlayPoller extends Thread {
 				int arrayZ = (chunkZ % len + len) % len;
 				overlays[arrayX][arrayZ] = buffer;
 			}
-		if(recountB)
+		if(recountB) {
 			counts = recount;
+			closestDistance = reClosestDistance;
+			closestPosX = reClosestPosX;
+			closestPosY = reClosestPosY;
+			closestPosZ = reClosestPosZ;
+		}
 	}
 	
+	public double distanceTo(int x, int y, int z, int targetX, int targetY, int targetZ) {
+    return Math.sqrt(Math.pow(x - targetX, 2) + Math.pow(y - targetY, 2) + Math.pow(z - targetZ, 2));
+	}
 }

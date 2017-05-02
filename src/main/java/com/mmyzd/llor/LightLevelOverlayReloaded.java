@@ -130,6 +130,17 @@ public class LightLevelOverlayReloaded {
 				messageB.append(ii).append(": ").append(poller.counts[ii]).append(" -- ");
 			}
 			event.getRight().add(messageB.toString());
+			if(poller.closestPosX > Integer.MIN_VALUE) {
+				messageB = new StringBuilder();
+				messageB.append("x: ").append(poller.closestPosX).append(" y: ").append(poller.closestPosY).append(" z: ").append(poller.closestPosZ);
+				event.getRight().add(messageB.toString());
+				messageB = new StringBuilder();
+				Minecraft mc = Minecraft.getMinecraft();
+				messageB.append("x: ").append((int)mc.player.posX - poller.closestPosX)
+								.append(" y: ").append((int)mc.player.posY - poller.closestPosY)
+								.append(" z: ").append((int)mc.player.posZ - poller.closestPosZ);
+				event.getRight().add(messageB.toString());
+			}
 		}
 	}
 }
