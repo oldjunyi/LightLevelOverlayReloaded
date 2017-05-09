@@ -21,6 +21,7 @@ import org.lwjgl.input.Keyboard;
 public class LightLevelOverlayReloaded {
 
 	public static final String MODID = "llor";
+	private static final int TICKS_FOR_MESSAGE = 40;
 
 	@Instance(MODID)
 	public static LightLevelOverlayReloaded instance;
@@ -73,12 +74,29 @@ public class LightLevelOverlayReloaded {
 				boolean useSkyLight = !config.useSkyLight.getBoolean();
 				config.useSkyLight.set(useSkyLight);
 				message = "Light Level Overlay: " + (useSkyLight ? "Block Light + Sky Light" : "Block Light Only");
-				messageRemainingTicks = 40;
+				messageRemainingTicks = TICKS_FOR_MESSAGE;
 			} else if (active && withCtrl && !withShift) {
 				int mode = (config.displayMode.getInt() + 1) % 3;
 				config.displayMode.set(mode);
 				message = "Light Level Overlay: " + config.displayModeName.get(mode) + " Mode";
-				messageRemainingTicks = 40;
+				messageRemainingTicks = TICKS_FOR_MESSAGE;
+			} else if (active && withCtrl && withShift) {
+				if(config.focusCoordinate.getString() == null || config.focusCoordinate.getString().isEmpty()) {
+					Minecraft mc = Minecraft.getMinecraft();
+					int playerPosY = (int)Math.floor(mc.player.posY);
+					int playerPosX = (int)Math.floor(mc.player.posX);
+					int playerPosZ = (int)Math.floor(mc.player.posZ); 
+					String focusCoordinate = playerPosX + "," + playerPosY + "," + playerPosZ;
+					config.focusCoordinate.set(focusCoordinate);
+					config.showClosest.set(true);
+					message = "Light Level Overlay: Focus on: " + focusCoordinate;
+					messageRemainingTicks = TICKS_FOR_MESSAGE;
+				} else {
+					config.focusCoordinate.set("");
+					config.showClosest.set(false);
+					message = "Light Level Overlay: Focus on: player";
+					messageRemainingTicks = TICKS_FOR_MESSAGE;
+				}
 			} else if (!withShift && !withCtrl && !withAlt) {
 				active = !active;
 				launchPoller();
@@ -105,6 +123,25 @@ public class LightLevelOverlayReloaded {
 			messageRemainingTicks -= event.getPartialTicks();
 			event.getLeft().add(message);
 		}
+		
+		if(LightLevelOverlayReloaded.instance.config.showClosest.getBoolean()) {
+			StringBuilder messageB = new StringBuilder("");
+			for(int ii = 0; ii < poller.counts.length; ii++) {
+				messageB.append(ii).append(": ").append(poller.counts[ii]).append(" -- ");
+			}
+			event.getRight().add(messageB.toString());
+			if(poller.closestPosX > Integer.MIN_VALUE) {
+				messageB = new StringBuilder();
+				messageB.append("x: ").append(poller.closestPosX).append(" y: ").append(poller.closestPosY).append(" z: ").append(poller.closestPosZ);
+				event.getRight().add(messageB.toString());
+				messageB = new StringBuilder();
+				Minecraft mc = Minecraft.getMinecraft();
+				messageB.append("x: ").append((int)mc.player.posX - poller.closestPosX)
+								.append(" y: ").append((int)mc.player.posY - poller.closestPosY)
+								.append(" z: ").append((int)mc.player.posZ - poller.closestPosZ);
+				event.getRight().add(messageB.toString());
+				event.getRight().add("minY : " + poller.minimumY);
+			}
+		}
 	}
-
 }

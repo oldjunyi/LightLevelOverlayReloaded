@@ -16,6 +16,8 @@ public class ConfigManager {
 	public Property displayMode;
 	public Property chunkRadius;
 	public Property pollingInterval;
+	public Property focusCoordinate;
+	public Property showClosest;
 	public ArrayList<String> displayModeName = new ArrayList<String>();
 	public ArrayList<String> displayModeDesc = new ArrayList<String>();
 	
@@ -47,6 +49,8 @@ public class ConfigManager {
 		displayMode = file.get("general", "displayMode", 0, comment);
 		chunkRadius = file.get("general", "chunkRadius", 3, "The distance (in chunks) of rendering radius. (default: 3)");
 		pollingInterval = file.get("general", "pollingInterval", 200, "The update interval (in milliseconds) of light level. Farther chunks update less frequently. (default: 200)");
+		focusCoordinate = file.get("general", "focusCoordinate", "", "If given, the calculation will start at this coordinate instead of the players position.");
+		showClosest = file.get("general", "showClosest", false, "Give directions to the closest tile with a light level below 8.");
 		update();
 	}
 	
@@ -55,6 +59,8 @@ public class ConfigManager {
 		displayMode.set(Math.min(Math.max(displayMode.getInt(0), 0), displayModeName.size() - 1));
 		chunkRadius.set(Math.min(Math.max(chunkRadius.getInt(3), 1), 9));
 		pollingInterval.set(Math.min(Math.max(pollingInterval.getInt(200), 10), 60000));
+		focusCoordinate.set(focusCoordinate.getString());
+		showClosest.set(showClosest.getBoolean(false));
 		file.save();
 	}
 	
