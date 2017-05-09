@@ -140,6 +140,7 @@ public class LightLevelOverlayReloaded {
 								.append(" y: ").append((int)mc.player.posY - poller.closestPosY)
 								.append(" z: ").append((int)mc.player.posZ - poller.closestPosZ);
 				event.getRight().add(messageB.toString());
+				event.getRight().add("minY : " + poller.minimumY);
 			}
 		}
 	}

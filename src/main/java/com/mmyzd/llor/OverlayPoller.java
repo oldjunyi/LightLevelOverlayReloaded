@@ -32,6 +32,8 @@ public class OverlayPoller extends Thread {
 	public volatile int closestPosZ = Integer.MIN_VALUE;
 	public volatile double closestDistance = Integer.MAX_VALUE;
 	
+	public volatile int minimumY = Integer.MAX_VALUE;
+	
 	@Override
 	public void run() {
 		int radius = 0;
@@ -118,6 +120,9 @@ public class OverlayPoller extends Thread {
 			}
 		}
 		
+		int maxY = (fixedPosition && calcBasePosY < 252 ? 256 : calcBasePosY + 4); // usually there are no structures above 256.
+		int minY = (fixedPosition ? Math.max(calcBasePosY - 132, 0) : Math.max(calcBasePosY - 40, 0));
+
 		for (int chunkX = calcBaseChunkX - radius; chunkX <= calcBaseChunkX + radius; chunkX++)
 			for (int chunkZ = calcBaseChunkZ - radius; chunkZ <= calcBaseChunkZ + radius; chunkZ++) {
 				Chunk chunk = mc.world.getChunkFromChunkCoords(chunkX, chunkZ);
@@ -127,17 +132,15 @@ public class OverlayPoller extends Thread {
 					for (int offsetZ = 0; offsetZ < 16; offsetZ++) {
 						int posX = (chunkX << 4) + offsetX;
 						int posZ = (chunkZ << 4) + offsetZ;
-						int maxY = (fixedPosition && calcBasePosY < 252 ? 256 : calcBasePosY + 4); // usually there are no structures above 256.
-						int minY = Math.max(calcBasePosY - 40, 0);
-						IBlockState preBlockState = null, curBlockState = chunk.getBlockState(offsetX, maxY, offsetZ);
-						Block preBlock = null, curBlock = curBlockState.getBlock();
-						BlockPos prePos = null, curPos = new BlockPos(posX, maxY, posZ);
+						IBlockState curBlockState = chunk.getBlockState(offsetX, maxY, offsetZ);
+						Block curBlock = curBlockState.getBlock();
+						BlockPos curPos = new BlockPos(posX, maxY, posZ);
 						for (int posY = maxY - 1; posY >= minY; posY--) {
-							preBlockState = curBlockState;
+							IBlockState preBlockState = curBlockState;
 							curBlockState = chunk.getBlockState(offsetX, posY, offsetZ);
-							preBlock = curBlock;
+							Block preBlock = curBlock;
 							curBlock = curBlockState.getBlock();
-							prePos = curPos;
+							BlockPos prePos = curPos;
 							curPos = new BlockPos(posX, posY, posZ);
 							
 							if (curBlock == Blocks.AIR ||
@@ -172,8 +175,6 @@ public class OverlayPoller extends Thread {
 								recount[lightIndex] ++;
 								//posX, posY, posZ
 								double distance = distanceTo(posX, posY, posZ, playerPosX, playerPosY, playerPosZ);
-								if(distance < 0)
-									distance = distance * -1;
 								if(distance < reClosestDistance) {
 									reClosestDistance = distance;
 									reClosestPosX = posX;
@@ -196,10 +197,17 @@ public class OverlayPoller extends Thread {
 			closestPosX = reClosestPosX;
 			closestPosY = reClosestPosY;
 			closestPosZ = reClosestPosZ;
+			minimumY = minY;
 		}
 	}
 	
 	public double distanceTo(int x, int y, int z, int targetX, int targetY, int targetZ) {
-    return Math.sqrt(Math.pow(x - targetX, 2) + Math.pow(y - targetY, 2) + Math.pow(z - targetZ, 2));
+		double xD = Math.pow(x - targetX, 2);
+		double yD = Math.pow(y - targetY, 2);
+		double zD = Math.pow(z - targetZ, 2);
+		if(xD < -1) xD = xD * -1;
+		if(yD < -1) yD = yD * -1;
+		if(zD < -1) zD = zD * -1;
+    return Math.sqrt(xD + yD + zD);
 	}
 }
