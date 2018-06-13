@@ -76,10 +76,9 @@ public class OverlayPoller extends Thread {
 					curBlock = curBlockState.getBlock();
 					prePos = curPos;
 					curPos = new BlockPos(posX, posY, posZ);
-					if (curBlock == Blocks.AIR ||
-						curBlock == Blocks.BEDROCK ||
+					if (curBlock == Blocks.BEDROCK ||
 						curBlock == Blocks.BARRIER ||
-						preBlockState.isBlockNormalCube() ||
+						!preBlockState.isFullCube() ||
 						preBlockState.getMaterial().isLiquid() ||
 						preBlockState.canProvidePower() ||
 						curBlockState.isSideSolid(world, curPos, EnumFacing.UP) == false ||
