@@ -7,6 +7,7 @@ import net.minecraft.block.BlockRailBase;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.WorldClient;
+import net.minecraft.entity.EntityLiving.SpawnPlacementType;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
@@ -58,7 +59,7 @@ public class OverlayPoller extends Thread {
 		
 		for (int chunkX = playerChunkX - radius; chunkX <= playerChunkX + radius; chunkX++)
 		for (int chunkZ = playerChunkZ - radius; chunkZ <= playerChunkZ + radius; chunkZ++) {
-			Chunk chunk = mc.world.getChunkFromChunkCoords(chunkX, chunkZ);
+			Chunk chunk = world.getChunkFromChunkCoords(chunkX, chunkZ);
 			if (!chunk.isLoaded()) continue;
 			ArrayList<Overlay> buffer = new ArrayList<Overlay>();
 			for (int offsetX = 0; offsetX < 16; offsetX++)
@@ -83,7 +84,8 @@ public class OverlayPoller extends Thread {
 						preBlockState.getMaterial().isLiquid() ||
 						preBlockState.canProvidePower() ||
 						curBlockState.isSideSolid(world, curPos, EnumFacing.UP) == false ||
-						BlockRailBase.isRailBlock(preBlockState)) {
+						BlockRailBase.isRailBlock(preBlockState) ||
+						!curBlock.canCreatureSpawn(curBlockState, world, curPos, SpawnPlacementType.ON_GROUND) {
 						continue;
 					}
 					double offsetY = 0;
