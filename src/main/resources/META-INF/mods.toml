@@ -1,0 +1,29 @@
+modLoader="javafml"
+loaderVersion="[25,)"
+issueTrackerURL="https://github.com/oldjunyi/LightLevelOverlayReloaded/issues"
+
+[[mods]]
+modId="llor"
+version="${file.jarVersion}"
+displayName="Light Level Overlay Reloaded"
+displayURL="https://minecraft.curseforge.com/projects/light-level-overlay-reloaded"
+logoFile="llor-logo.png"
+authors="oldjunyi"
+description='''
+It is a mod to display light levels on top of nearby blocks.
+The default shortcut key to turn on/off light level overlay is F4. You can change it in "Options -> Controls".
+'''
+
+[[dependencies.llor]]
+modId="forge"
+mandatory=true
+versionRange="[25,)"
+ordering="NONE"
+side="CLIENT"
+
+[[dependencies.llor]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.13.2]"
+ordering="NONE"
+side="CLIENT"
