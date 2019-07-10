@@ -39,10 +39,10 @@ public class ConfigManager {
 
   private ModConfig modConfig;
   private final ForgeConfigSpec configSpec;
-  private final ForgeConfigSpec.IntValue renderingRadius;
-  private final ForgeConfigSpec.IntValue pollingInterval;
-  private final ForgeConfigSpec.BooleanValue announcingWhenToggleOverlay;
-  private final ForgeConfigSpec.BooleanValue announcingWhenSwitchDisplayMode;
+  private final ForgeConfigSpec.ConfigValue<Integer> renderingRadius;
+  private final ForgeConfigSpec.ConfigValue<Integer> pollingInterval;
+  private final ForgeConfigSpec.ConfigValue<Boolean> announcingWhenToggleOverlay;
+  private final ForgeConfigSpec.ConfigValue<Boolean> announcingWhenSwitchDisplayMode;
   private final ForgeConfigSpec.ConfigValue<String> displayModeName;
 
   private DisplayModeManager displayModeManager = new DisplayModeManager();
@@ -132,7 +132,7 @@ public class ConfigManager {
     MinecraftForge.EVENT_BUS.post(new ConfigUpdateEvent(this, config));
   }
 
-  public void reloadDisplayMode() {
+  private void reloadDisplayMode() {
     DisplayMode displayMode = displayModeManager.getDisplayMode(config.getDisplayMode().getName());
     configBuilder.setDisplayMode(displayMode);
     config = configBuilder.build();
@@ -165,7 +165,7 @@ public class ConfigManager {
 
     @SubscribeEvent
     public void onKeyInput(KeyInputEvent event) {
-      with(ConfigManager::handleKeyInput);
+      with(configManager -> configManager.handleKeyInput());
     }
 
     @SubscribeEvent

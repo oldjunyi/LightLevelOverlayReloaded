@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -18,8 +17,8 @@ import com.mmyzd.llor.message.FloatingMessage;
 import com.mmyzd.llor.message.MessageEvent;
 import com.mmyzd.llor.util.EventBusWeakSubscriber;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.resources.ClientResourcePackInfo;
 import net.minecraft.client.resources.I18n;
+import net.minecraft.client.resources.ResourcePackInfoClient;
 import net.minecraft.resources.IReloadableResourceManager;
 import net.minecraft.resources.IResource;
 import net.minecraft.resources.IResourceManager;
@@ -40,9 +39,9 @@ public class DisplayModeManager {
   private static final String RESOURCE_FOLDER_NAME = "displaymodes";
   private static final String RESOURCE_FILE_SUFFIX = ".json";
   private static final Gson GSON = new GsonBuilder()
-          .registerTypeAdapter(DisplayModeNode.class, new DisplayModeNode.Adapter()).create();
+      .registerTypeAdapter(DisplayModeNode.class, new DisplayModeNode.Adapter()).create();
 
-  private Map<String, DisplayMode> displayModeByName = new HashMap<>();
+  private Map<String, DisplayMode> displayModeByName = new HashMap<String, DisplayMode>();
   private DisplayMode[] displayModes = new DisplayMode[0];
 
   public DisplayModeManager() {
@@ -63,45 +62,47 @@ public class DisplayModeManager {
     return displayModes.length > 0 ? displayModes[0] : new DisplayMode("standard");
   }
 
-  // Minecraft's own code contains many bugs related to resource packs. The file path depth
+  // Minecraft its own code contains many bugs related to resource packs. The file path depth
   // checker has a reverted logic for zip type resource packs. So the depth limit must be 0 in that
   // case. On the other side, `resourceManager.getAllResourceLocations` will return an invalid path
   // which contains "//" in the path string for folder type resource packs.
   // TODO: Clean up this workaround after those bugs are fixed.
   private ResourceLocation[] getAllCanonicalResourceLocations() {
-    HashSet<String> paths = new HashSet<>();
-    Collection<ClientResourcePackInfo> packInfos =
-            Minecraft.getInstance().getResourcePackList().getEnabledPacks();
+    HashSet<String> paths = new HashSet<String>();
+    Collection<ResourcePackInfoClient> packInfos =
+        Minecraft.getInstance().getResourcePackList().getPackInfos();
     packInfos.forEach(packInfo -> {
       try {
         IResourcePack pack = packInfo.getResourcePack();
-        Stream.of(0, 255).forEach(depthLimit -> pack.getAllResourceLocations(ResourcePackType.CLIENT_RESOURCES, RESOURCE_FOLDER_NAME,
-                depthLimit, path -> path.toLowerCase().endsWith(RESOURCE_FILE_SUFFIX)).stream()
-                .filter(resourceLocation -> ForgeMod.ID.equals(resourceLocation.getNamespace()))
-                .forEach(resourceLocation -> paths.add(resourceLocation.getPath())));
+        Stream.of(0, 255).forEach(depthLimit -> {
+          pack.getAllResourceLocations(ResourcePackType.CLIENT_RESOURCES, RESOURCE_FOLDER_NAME,
+              depthLimit, path -> path.toLowerCase().endsWith(RESOURCE_FILE_SUFFIX)).stream()
+              .filter(resourceLocation -> ForgeMod.ID.equals(resourceLocation.getNamespace()))
+              .forEach(resourceLocation -> paths.add(resourceLocation.getPath()));
+        });
       } catch (Exception exception) {
         exception.printStackTrace();
       }
     });
     return paths.stream().map(path -> new ResourceLocation(ForgeMod.ID, path))
-            .toArray(ResourceLocation[]::new);
+        .toArray(ResourceLocation[]::new);
   }
 
   private void reload() {
-    Map<String, DisplayMode> displayModeByName = new HashMap<>();
+    Map<String, DisplayMode> displayModeByName = new HashMap<String, DisplayMode>();
     for (ResourceLocation resourceLocation : getAllCanonicalResourceLocations()) {
       String path = resourceLocation.getPath();
       String name = path.substring(RESOURCE_FOLDER_NAME.length() + 1,
-              path.length() - RESOURCE_FILE_SUFFIX.length());
+          path.length() - RESOURCE_FILE_SUFFIX.length());
       DisplayMode displayMode = load(resourceLocation, name);
       if (displayMode != null) {
         displayModeByName.put(name, displayMode);
       }
     }
     this.displayModeByName = displayModeByName;
-    displayModes = displayModeByName.values().stream()
-            .sorted(Comparator.comparingInt(DisplayMode::getListingPriority))
-            .toArray(DisplayMode[]::new);
+    displayModes = displayModeByName.entrySet().stream().map(any -> any.getValue())
+        .sorted((left, right) -> left.getListingPriority() - right.getListingPriority())
+        .toArray(DisplayMode[]::new);
     MinecraftForge.EVENT_BUS.post(new DisplayModeUpdateEvent(this));
   }
 
@@ -152,16 +153,16 @@ public class DisplayModeManager {
   }
 
   private void displayException(Exception exception, ResourceLocation resourceLocation,
-                                String translationKey) {
+      String translationKey) {
     String path = resourceLocation.getPath();
     MinecraftForge.EVENT_BUS
-            .post(new MessageEvent(new FloatingMessage(I18n.format(translationKey, path),
-                    MESSAGE_IDENTIFIER_PREFIX + path, MESSAGE_DURATION_TICKS)));
+        .post(new MessageEvent(new FloatingMessage(I18n.format(translationKey, path),
+            MESSAGE_IDENTIFIER_PREFIX + path, MESSAGE_DURATION_TICKS)));
     exception.printStackTrace();
   }
 
   private static class EventHandler extends EventBusWeakSubscriber<DisplayModeManager>
-          implements ISelectiveResourceReloadListener {
+      implements ISelectiveResourceReloadListener {
 
     private EventHandler(DisplayModeManager displayModeManager) {
       super(displayModeManager);
@@ -173,8 +174,8 @@ public class DisplayModeManager {
 
     @Override
     public void onResourceManagerReload(IResourceManager resourceManager,
-                                        Predicate<IResourceType> resourcePredicate) {
-      with(DisplayModeManager::reload);
+        Predicate<IResourceType> resourcePredicate) {
+      with(displayModeManager -> displayModeManager.reload());
     }
   }
 }

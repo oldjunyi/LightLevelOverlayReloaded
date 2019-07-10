@@ -8,12 +8,11 @@ import com.mmyzd.llor.displaymode.DisplayMode;
 import com.mmyzd.llor.displaymode.datatype.TextureCoordinates;
 import com.mmyzd.llor.util.EventBusWeakSubscriber;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.entity.player.ClientPlayerEntity;
+import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.client.world.ClientWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.minecraftforge.common.MinecraftForge;
@@ -23,8 +22,6 @@ public class OverlayRenderer {
 
   private final ConfigManager configManager;
   private final OverlayProvider overlayProvider;
-
-  private boolean hasDoneHackyReload = false;
 
   public OverlayRenderer(ConfigManager configManager, OverlayProvider overlayProvider) {
     this.configManager = configManager;
@@ -40,29 +37,23 @@ public class OverlayRenderer {
 
     DisplayMode displayMode = config.getDisplayMode();
     if (displayMode.getTexture() == null) {
-      if(!hasDoneHackyReload) {
-        hasDoneHackyReload = true;
-        // Cadiboo: Hotfix Config#displayMode being a dummy the first time the mod is run.
-        // TODO: Actually fix this. Its related to the config not having its display node
-        //  changed from the default one specified in the Config Builder.
-        configManager.reloadDisplayMode();
-      }
       return;
     }
 
     Minecraft minecraft = Minecraft.getInstance();
-    ClientWorld world = minecraft.world;
-    ClientPlayerEntity player = minecraft.player;
+    WorldClient world = minecraft.world;
+    EntityPlayerSP player = minecraft.player;
     if (world == null || player == null) {
       return;
     }
 
-    double viewX = TileEntityRendererDispatcher.staticPlayerX;
-    double viewY = TileEntityRendererDispatcher.staticPlayerY;
-    double viewZ = TileEntityRendererDispatcher.staticPlayerZ;
+    double partialTicks = event.getPartialTicks();
+    double viewX = player.lastTickPosX + (player.posX - player.lastTickPosX) * partialTicks;
+    double viewY = player.lastTickPosY + (player.posY - player.lastTickPosY) * partialTicks;
+    double viewZ = player.lastTickPosZ + (player.posZ - player.lastTickPosZ) * partialTicks;
 
     minecraft.getTextureManager().bindTexture(displayMode.getTexture());
-    minecraft.gameRenderer.enableLightmap();
+    minecraft.entityRenderer.enableLightmap();
 
     BufferBuilder vertexBuffer = Tessellator.getInstance().getBuffer();
     vertexBuffer.begin(GL11.GL_QUADS, DefaultVertexFormats.BLOCK);
@@ -72,10 +63,10 @@ public class OverlayRenderer {
 
     vertexBuffer.setTranslation(0, 0, 0);
     Tessellator.getInstance().draw();
-    minecraft.gameRenderer.disableLightmap();
+    minecraft.entityRenderer.disableLightmap();
   }
 
-  private void renderOverlays(ClientWorld world, BufferBuilder vertexBuffer,
+  private void renderOverlays(WorldClient world, BufferBuilder vertexBuffer,
       DisplayMode displayMode, ArrayList<Overlay> overlays) {
     double luminosity = displayMode.getLuminosity();
     for (Overlay overlay : overlays) {

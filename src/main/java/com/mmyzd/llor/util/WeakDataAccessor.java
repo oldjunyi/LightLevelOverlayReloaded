@@ -8,7 +8,7 @@ public class WeakDataAccessor<T> {
   private WeakReference<T> reference;
 
   public WeakDataAccessor(T instance) {
-    this.reference = new WeakReference<>(instance);
+    this.reference = new WeakReference<T>(instance);
   }
 
   public void clear() {

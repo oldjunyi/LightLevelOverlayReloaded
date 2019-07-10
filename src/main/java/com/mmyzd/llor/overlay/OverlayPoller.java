@@ -3,18 +3,16 @@ package com.mmyzd.llor.overlay;
 import java.util.ArrayList;
 import com.mmyzd.llor.config.Config;
 import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.entity.player.ClientPlayerEntity;
-import net.minecraft.client.world.ClientWorld;
+import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.client.multiplayer.WorldClient;
+import net.minecraft.init.Blocks;
 import net.minecraft.tags.BlockTags;
-import net.minecraft.util.Direction;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.BlockPos.PooledMutableBlockPos;
-import net.minecraft.world.LightType;
+import net.minecraft.world.EnumLightType;
 import net.minecraft.world.chunk.Chunk;
-import net.minecraft.world.lighting.WorldLightManager;
 
 public class OverlayPoller extends Thread {
 
@@ -26,17 +24,12 @@ public class OverlayPoller extends Thread {
     this.config = config;
   }
 
-  @SuppressWarnings("unchecked")
-  private static ArrayList<Overlay>[][] createOverlaysMatrix(int size) {
-    return new ArrayList[size][size];
+  public void setConfig(Config config) {
+    this.config = config;
   }
 
   public Config getConfig() {
     return config;
-  }
-
-  public void setConfig(Config config) {
-    this.config = config;
   }
 
   public ArrayList<Overlay> getOverlays() {
@@ -56,13 +49,18 @@ public class OverlayPoller extends Thread {
     }
   }
 
+  @SuppressWarnings("unchecked")
+  private static ArrayList<Overlay>[][] createOverlaysMatrix(int size) {
+    return new ArrayList[size][size];
+  }
+
   private void updateOverlays(Config config, long loopIndex) {
     if (!config.isOverlayEnabled())
       return;
 
     Minecraft minecraft = Minecraft.getInstance();
-    ClientWorld world = minecraft.world;
-    ClientPlayerEntity player = minecraft.player;
+    WorldClient world = minecraft.world;
+    EntityPlayerSP player = minecraft.player;
     if (world == null || player == null) {
       overlays = new ArrayList<Overlay>();
       chunks = createOverlaysMatrix(0);
@@ -76,7 +74,7 @@ public class OverlayPoller extends Thread {
     int radius = config.getRenderingRadius();
     int diameter = radius * 2 + 1;
     ArrayList<Overlay>[][] chunks = createOverlaysMatrix(diameter);
-    ArrayList<Overlay> overlays = new ArrayList<>();
+    ArrayList<Overlay> overlays = new ArrayList<Overlay>();
 
     int minChunkX = playerChunkX - radius;
     int maxChunkX = playerChunkX + radius;
@@ -93,7 +91,8 @@ public class OverlayPoller extends Thread {
         int chunkDistance = Math.max(chunkDistanceX, chunkDistanceZ);
 
         ArrayList<Overlay> chunk;
-        if (chunkDistance == 0 || loopIndex % chunkDistance == 0 || chunks.length != this.chunks.length) {
+        if (chunkDistance == 0 || loopIndex % chunkDistance == 0 ||
+            chunks.length != this.chunks.length) {
           chunk = createOverlaysForChunk(world, chunkX, chunkZ, playerY);
         } else {
           chunk = this.chunks[arrayX][arrayZ];
@@ -107,68 +106,65 @@ public class OverlayPoller extends Thread {
     this.chunks = chunks;
   }
 
-  public ArrayList<Overlay> createOverlaysForChunk(ClientWorld world, int chunkX, int chunkZ, int playerY) {
+  public ArrayList<Overlay> createOverlaysForChunk(WorldClient world, int chunkX, int chunkZ,
+      int playerY) {
     Chunk chunk = world.getChunk(chunkX, chunkZ);
-    if (!world.isBlockLoaded(new BlockPos(chunkX << 4, 64, chunkZ << 4))) {
-      return new ArrayList<>();
+    if (!chunk.isLoaded()) {
+      return new ArrayList<Overlay>();
     }
 
-    final WorldLightManager worldlightmanager = world.getChunkProvider().getLightManager();
-
-    int sunLightReduction = world.getSkylightSubtracted();
+    int sunLightReduction = world.calculateSkylightSubtracted(1.0f);
     Overlay.Builder overlayBuilder = new Overlay.Builder();
-    ArrayList<Overlay> overlays = new ArrayList<>();
-    try (PooledMutableBlockPos mutable = PooledMutableBlockPos.retain()) {
-      for (int offsetX = 0; offsetX < 16; offsetX++) {
-        for (int offsetZ = 0; offsetZ < 16; offsetZ++) {
-          int posX = (chunkX << 4) + offsetX;
-          int posZ = (chunkZ << 4) + offsetZ;
-          int maxY = playerY + 4;
-          int minY = Math.max(playerY - 40, 0);
+    ArrayList<Overlay> overlays = new ArrayList<Overlay>();
+    for (int offsetX = 0; offsetX < 16; offsetX++) {
+      for (int offsetZ = 0; offsetZ < 16; offsetZ++) {
+        int posX = (chunkX << 4) + offsetX;
+        int posZ = (chunkZ << 4) + offsetZ;
+        int maxY = playerY + 4;
+        int minY = Math.max(playerY - 40, 0);
 
-          BlockState upperBlockState = null;
-          BlockState spawnBlockState = chunk.getBlockState(mutable.setPos(posX, maxY, posZ));
-          BlockPos upperBlockPos = null;
-          BlockPos spawnBlockPos = new BlockPos(posX, maxY, posZ);
+        IBlockState upperBlockState = null;
+        IBlockState spawnBlockState = chunk.getBlockState(posX, maxY, posZ);
+        BlockPos upperBlockPos = null;
+        BlockPos spawnBlockPos = new BlockPos(posX, maxY, posZ);
 
-          for (int posY = maxY - 1; posY >= minY; posY--) {
-            upperBlockState = spawnBlockState;
-            spawnBlockState = chunk.getBlockState(mutable.setPos(posX, posY, posZ));
-            upperBlockPos = spawnBlockPos;
-            spawnBlockPos = new BlockPos(posX, posY, posZ);
+        for (int posY = maxY - 1; posY >= minY; posY--) {
+          upperBlockState = spawnBlockState;
+          spawnBlockState = chunk.getBlockState(posX, posY, posZ);
+          upperBlockPos = spawnBlockPos;
+          spawnBlockPos = new BlockPos(posX, posY, posZ);
 
-            Block spawnBlock = spawnBlockState.getBlock();
-            if (spawnBlock == Blocks.AIR || spawnBlock == Blocks.BEDROCK ||
-                    spawnBlock == Blocks.BARRIER || !spawnBlockState.func_215682_a(world, spawnBlockPos, Minecraft.getInstance().player)) {
-              continue;
-            }
-
-            if (Block.isOpaque(upperBlockState.getCollisionShape(world, upperBlockPos)) || upperBlockState.canProvidePower() ||
-                    upperBlockState.isIn(BlockTags.RAILS) || upperBlockState
-                    .getCollisionShape(world, upperBlockPos).getEnd(Direction.Axis.Y) > 0 ||
-                    !upperBlockState.getFluidState().isEmpty()) {
-              continue;
-            }
-
-            double renderingPosY = posY + 1.01;
-            if (upperBlockState.getShape(world, upperBlockPos).isEmpty() && upperBlockState.isSolid()) {
-              renderingPosY += Math.max(
-                      upperBlockState.getRenderShape(world, upperBlockPos).getEnd(Direction.Axis.Y), 0);
-            }
-
-            int blockLight = worldlightmanager.getLightEngine(LightType.BLOCK).getLightFor(upperBlockPos);
-            int skyLight = worldlightmanager.getLightEngine(LightType.SKY).getLightFor(upperBlockPos);
-            int sunLight = Math.max(skyLight - sunLightReduction, 0);
-
-            overlayBuilder.setPos(upperBlockPos);
-            overlayBuilder.setX(posX);
-            overlayBuilder.setZ(posZ);
-            overlayBuilder.setY(renderingPosY);
-            overlayBuilder.setBlockLight(blockLight);
-            overlayBuilder.setSkyLight(skyLight);
-            overlayBuilder.setSunLight(sunLight);
-            overlays.add(overlayBuilder.build());
+          Block spawnBlock = spawnBlockState.getBlock();
+          if (spawnBlock == Blocks.AIR || spawnBlock == Blocks.BEDROCK ||
+              spawnBlock == Blocks.BARRIER || !spawnBlockState.isTopSolid()) {
+            continue;
           }
+
+          if (upperBlockState.isBlockNormalCube() || upperBlockState.canProvidePower() ||
+              upperBlockState.isIn(BlockTags.RAILS) || upperBlockState
+                  .getCollisionShape(world, upperBlockPos).getEnd(EnumFacing.Axis.Y) > 0 ||
+              !upperBlockState.getFluidState().isEmpty()) {
+            continue;
+          }
+
+          double renderingPosY = posY + 1.01;
+          if (!upperBlockState.isFullCube() && upperBlockState.isSolid()) {
+            renderingPosY += Math.max(
+                upperBlockState.getRenderShape(world, upperBlockPos).getEnd(EnumFacing.Axis.Y), 0);
+          }
+
+          int blockLight = chunk.getLight(EnumLightType.BLOCK, upperBlockPos, false);
+          int skyLight = chunk.getLight(EnumLightType.SKY, upperBlockPos, true);
+          int sunLight = Math.max(skyLight - sunLightReduction, 0);
+
+          overlayBuilder.setPos(upperBlockPos);
+          overlayBuilder.setX(posX);
+          overlayBuilder.setZ(posZ);
+          overlayBuilder.setY(renderingPosY);
+          overlayBuilder.setBlockLight(blockLight);
+          overlayBuilder.setSkyLight(skyLight);
+          overlayBuilder.setSunLight(sunLight);
+          overlays.add(overlayBuilder.build());
         }
       }
     }
