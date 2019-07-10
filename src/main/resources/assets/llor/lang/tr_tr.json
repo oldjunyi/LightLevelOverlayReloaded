@@ -1,0 +1,10 @@
+{
+    "key.llor.hotkey": "Aç/Kapa",
+    "key.categories.llor": "Light Level Overlay Reloaded",
+    "llor.message.switch_mode": "Işık Seviyesi Gösterimi: %s Modu",
+    "llor.message.toggle_on": "Işık Seviyesi Gösterimi: açık",
+    "llor.message.toggle_off": "Işık Seviyesi Gösterimi: kapalı",
+    "llor.message.opening_error": "Işık Seviyesi Gösterimi: %s açılamadı",
+    "llor.message.parsing_error": "Işık Seviyesi Gösterimi: %s ayrıştırması başarısız",
+    "llor.message.binding_error": "Işık Seviyesi Gösterimi: %s için doku ataması başarısız"
+}
