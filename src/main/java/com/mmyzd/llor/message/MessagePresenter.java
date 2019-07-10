@@ -24,9 +24,7 @@ public class MessagePresenter {
   }
 
   public void present(FloatingMessage message) {
-    floatingMessages.removeIf(existingMessage -> {
-      return message.getIdentifier().equals(existingMessage.getIdentifier());
-    });
+    floatingMessages.removeIf(existingMessage -> message.getIdentifier().equals(existingMessage.getIdentifier()));
     floatingMessages.add(message);
   }
 
