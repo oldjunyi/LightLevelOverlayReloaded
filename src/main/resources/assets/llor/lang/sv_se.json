@@ -1,0 +1,10 @@
+{
+    "key.llor.hotkey": "Sätt På/Av",
+    "key.categories.llor": "Light Level Overlay Reloaded",
+    "llor.message.switch_mode": "Light Level Overlay: %s läge",
+    "llor.message.toggle_on": "Light Level Overlay: på",
+    "llor.message.toggle_off": "Light Level Overlay: av",
+    "llor.message.opening_error": "Light Level Overlay: Misslyckades med att öppna %s",
+    "llor.message.parsing_error": "Light Level Overlay: failed to parse %s",
+    "llor.message.binding_error": "Light Level Overlay: Misslyckades med att binda textur för %s"
+}
