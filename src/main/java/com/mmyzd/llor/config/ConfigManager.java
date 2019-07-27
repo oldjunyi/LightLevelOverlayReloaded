@@ -16,6 +16,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import org.lwjgl.glfw.GLFW;
 import com.mmyzd.llor.ForgeMod;
+import com.mmyzd.llor.config.ConfigManager.ConfigLoadEvent;
 import com.mmyzd.llor.displaymode.DisplayMode;
 import com.mmyzd.llor.displaymode.DisplayModeManager;
 import com.mmyzd.llor.displaymode.DisplayModeUpdateEvent;
@@ -48,6 +49,7 @@ public class ConfigManager {
   private DisplayModeManager displayModeManager = new DisplayModeManager();
 
   public ConfigManager() {
+    System.out.println("ConfigManager() started");
     MinecraftForge.EVENT_BUS.register(new EventHandler(this));
 
     hotkey = new KeyBinding("key.llor.hotkey", KeyConflictContext.IN_GAME,
@@ -89,6 +91,7 @@ public class ConfigManager {
     configSpec = configSpecBuilder.build();
     ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, configSpec,
         ForgeMod.NAME + ".toml");
+    System.out.println("ConfigManager() finished");
   }
 
   public Config getConfig() {
@@ -123,7 +126,8 @@ public class ConfigManager {
     }
   }
 
-  private void loadFromFile(ModConfig modConfig) {
+  private void loadConfigFromFile(ModConfig modConfig) {
+    System.out.println("loadConfigFromFile!");
     this.modConfig = modConfig;
     configBuilder.setRenderingRadius(renderingRadius.get());
     configBuilder.setPollingInterval(pollingInterval.get());
@@ -132,7 +136,9 @@ public class ConfigManager {
     MinecraftForge.EVENT_BUS.post(new ConfigUpdateEvent(this, config));
   }
 
-  public void reloadDisplayMode() {
+  private void loadDisplayModeFromManager(DisplayModeManager displayModeManager) {
+    System.out.println("loadDisplayModeFromManager!");
+    if (displayModeManager != this.displayModeManager) return;
     DisplayMode displayMode = displayModeManager.getDisplayMode(config.getDisplayMode().getName());
     configBuilder.setDisplayMode(displayMode);
     config = configBuilder.build();
@@ -141,6 +147,7 @@ public class ConfigManager {
 
   @SubscribeEvent
   public static void onModConfigLoading(ModConfig.Loading event) {
+    System.out.println("onModConfigLoading!");
     MinecraftForge.EVENT_BUS.post(new ConfigLoadEvent(event.getConfig()));
   }
 
@@ -170,16 +177,14 @@ public class ConfigManager {
 
     @SubscribeEvent
     public void onReload(ConfigLoadEvent event) {
-      with(configManager -> configManager.loadFromFile(event.getConfig()));
+      System.out.println("onReload!");
+      with(configManager -> configManager.loadConfigFromFile(event.getConfig()));
     }
 
     @SubscribeEvent
     public void onDisplayModeUpdate(DisplayModeUpdateEvent event) {
-      with(configManager -> {
-        if (event.getDisplayModeManager() == configManager.displayModeManager) {
-          configManager.reloadDisplayMode();
-        }
-      });
+      System.out.println("onDisplayModeUpdate!");
+      with(configManager -> configManager.loadDisplayModeFromManager(configManager.displayModeManager));
     }
   }
 }

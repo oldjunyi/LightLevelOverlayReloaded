@@ -7,13 +7,14 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
+import net.minecraft.client.multiplayer.ClientChunkProvider;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.BlockPos.PooledMutableBlockPos;
 import net.minecraft.world.LightType;
 import net.minecraft.world.chunk.Chunk;
+import net.minecraft.world.chunk.ChunkStatus;
 import net.minecraft.world.lighting.WorldLightManager;
 
 public class OverlayPoller extends Thread {
@@ -24,11 +25,6 @@ public class OverlayPoller extends Thread {
 
   public OverlayPoller(Config config) {
     this.config = config;
-  }
-
-  @SuppressWarnings("unchecked")
-  private static ArrayList<Overlay>[][] createOverlaysMatrix(int size) {
-    return new ArrayList[size][size];
   }
 
   public Config getConfig() {
@@ -56,9 +52,15 @@ public class OverlayPoller extends Thread {
     }
   }
 
+  @SuppressWarnings("unchecked")
+  private static ArrayList<Overlay>[][] createOverlaysMatrix(int size) {
+    return new ArrayList[size][size];
+  }
+
   private void updateOverlays(Config config, long loopIndex) {
-    if (!config.isOverlayEnabled())
+    if (!config.isOverlayEnabled()) {
       return;
+    }
 
     Minecraft minecraft = Minecraft.getInstance();
     ClientWorld world = minecraft.world;
@@ -93,7 +95,8 @@ public class OverlayPoller extends Thread {
         int chunkDistance = Math.max(chunkDistanceX, chunkDistanceZ);
 
         ArrayList<Overlay> chunk;
-        if (chunkDistance == 0 || loopIndex % chunkDistance == 0 || chunks.length != this.chunks.length) {
+        if (chunkDistance == 0 || loopIndex % chunkDistance == 0 ||
+            chunks.length != this.chunks.length) {
           chunk = createOverlaysForChunk(world, chunkX, chunkZ, playerY);
         } else {
           chunk = this.chunks[arrayX][arrayZ];
@@ -107,68 +110,72 @@ public class OverlayPoller extends Thread {
     this.chunks = chunks;
   }
 
-  public ArrayList<Overlay> createOverlaysForChunk(ClientWorld world, int chunkX, int chunkZ, int playerY) {
-    Chunk chunk = world.getChunk(chunkX, chunkZ);
-    if (!world.isBlockLoaded(new BlockPos(chunkX << 4, 64, chunkZ << 4))) {
+  public ArrayList<Overlay> createOverlaysForChunk(ClientWorld world, int chunkX, int chunkZ,
+      int playerY) {
+    ClientChunkProvider chunkProvider = world.getChunkProvider();
+    Chunk chunk = chunkProvider.getChunk(chunkX, chunkZ, ChunkStatus.FULL, false);
+    if (chunk == null) {
       return new ArrayList<>();
     }
 
-    final WorldLightManager worldlightmanager = world.getChunkProvider().getLightManager();
-
+    WorldLightManager lightmanager = chunkProvider.getLightManager();
     int sunLightReduction = world.getSkylightSubtracted();
+
     Overlay.Builder overlayBuilder = new Overlay.Builder();
     ArrayList<Overlay> overlays = new ArrayList<>();
-    try (PooledMutableBlockPos mutable = PooledMutableBlockPos.retain()) {
-      for (int offsetX = 0; offsetX < 16; offsetX++) {
-        for (int offsetZ = 0; offsetZ < 16; offsetZ++) {
-          int posX = (chunkX << 4) + offsetX;
-          int posZ = (chunkZ << 4) + offsetZ;
-          int maxY = playerY + 4;
-          int minY = Math.max(playerY - 40, 0);
 
-          BlockState upperBlockState = null;
-          BlockState spawnBlockState = chunk.getBlockState(mutable.setPos(posX, maxY, posZ));
-          BlockPos upperBlockPos = null;
-          BlockPos spawnBlockPos = new BlockPos(posX, maxY, posZ);
+    for (int offsetX = 0; offsetX < 16; offsetX++) {
+      for (int offsetZ = 0; offsetZ < 16; offsetZ++) {
+        int posX = (chunkX << 4) + offsetX;
+        int posZ = (chunkZ << 4) + offsetZ;
+        int maxY = playerY + 4;
+        int minY = Math.max(playerY - 40, 0);
 
-          for (int posY = maxY - 1; posY >= minY; posY--) {
-            upperBlockState = spawnBlockState;
-            spawnBlockState = chunk.getBlockState(mutable.setPos(posX, posY, posZ));
-            upperBlockPos = spawnBlockPos;
-            spawnBlockPos = new BlockPos(posX, posY, posZ);
+        BlockPos upperBlockPos = null;
+        BlockPos spawnBlockPos = new BlockPos(posX, maxY, posZ);
+        BlockState upperBlockState = null;
+        BlockState spawnBlockState = chunk.getBlockState(spawnBlockPos);
 
-            Block spawnBlock = spawnBlockState.getBlock();
-            if (spawnBlock == Blocks.AIR || spawnBlock == Blocks.BEDROCK ||
-                    spawnBlock == Blocks.BARRIER || !spawnBlockState.func_215682_a(world, spawnBlockPos, Minecraft.getInstance().player)) {
-              continue;
-            }
+        for (int posY = maxY - 1; posY >= minY; posY--) {
+          upperBlockPos = spawnBlockPos;
+          spawnBlockPos = new BlockPos(posX, posY, posZ);
+          upperBlockState = spawnBlockState;
+          spawnBlockState = chunk.getBlockState(spawnBlockPos);
 
-            if (Block.isOpaque(upperBlockState.getCollisionShape(world, upperBlockPos)) || upperBlockState.canProvidePower() ||
-                    upperBlockState.isIn(BlockTags.RAILS) || upperBlockState
-                    .getCollisionShape(world, upperBlockPos).getEnd(Direction.Axis.Y) > 0 ||
-                    !upperBlockState.getFluidState().isEmpty()) {
-              continue;
-            }
-
-            double renderingPosY = posY + 1.01;
-            if (upperBlockState.getShape(world, upperBlockPos).isEmpty() && upperBlockState.isSolid()) {
-              renderingPosY += Math.max(
-                      upperBlockState.getRenderShape(world, upperBlockPos).getEnd(Direction.Axis.Y), 0);
-            }
-
-            int blockLight = worldlightmanager.getLightEngine(LightType.BLOCK).getLightFor(upperBlockPos);
-            int skyLight = worldlightmanager.getLightEngine(LightType.SKY).getLightFor(upperBlockPos);
-            int sunLight = Math.max(skyLight - sunLightReduction, 0);
-
-            overlayBuilder.setPos(upperBlockPos);
-            overlayBuilder.setX(posX);
-            overlayBuilder.setZ(posZ);
-            overlayBuilder.setY(renderingPosY);
-            overlayBuilder.setBlockLight(blockLight);
-            overlayBuilder.setSkyLight(skyLight);
-            overlayBuilder.setSunLight(sunLight);
-            overlays.add(overlayBuilder.build());
+          Block spawnBlock = spawnBlockState.getBlock();
+          if (spawnBlock == Blocks.AIR || spawnBlock == Blocks.BEDROCK ||
+              spawnBlock == Blocks.BARRIER || !spawnBlockState.func_215682_a(world, spawnBlockPos,
+                  Minecraft.getInstance().player)) {
+            continue;
           }
+
+          if (Block.isOpaque(upperBlockState.getCollisionShape(world, upperBlockPos)) ||
+              upperBlockState.canProvidePower() || upperBlockState.isIn(BlockTags.RAILS) ||
+              upperBlockState.getCollisionShape(world, upperBlockPos)
+                  .getEnd(Direction.Axis.Y) > 0 ||
+              !upperBlockState.getFluidState().isEmpty()) {
+            continue;
+          }
+
+          double renderingPosY = posY + 1.01;
+          if (upperBlockState.getShape(world, upperBlockPos).isEmpty() &&
+              upperBlockState.isSolid()) {
+            renderingPosY += Math.max(
+                upperBlockState.getRenderShape(world, upperBlockPos).getEnd(Direction.Axis.Y), 0);
+          }
+
+          int blockLight = lightmanager.getLightEngine(LightType.BLOCK).getLightFor(upperBlockPos);
+          int skyLight = lightmanager.getLightEngine(LightType.SKY).getLightFor(upperBlockPos);
+          int sunLight = Math.max(skyLight - sunLightReduction, 0);
+
+          overlayBuilder.setPos(upperBlockPos);
+          overlayBuilder.setX(posX);
+          overlayBuilder.setZ(posZ);
+          overlayBuilder.setY(renderingPosY);
+          overlayBuilder.setBlockLight(blockLight);
+          overlayBuilder.setSkyLight(skyLight);
+          overlayBuilder.setSunLight(sunLight);
+          overlays.add(overlayBuilder.build());
         }
       }
     }

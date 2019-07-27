@@ -24,8 +24,6 @@ public class OverlayRenderer {
   private final ConfigManager configManager;
   private final OverlayProvider overlayProvider;
 
-  private boolean hasDoneHackyReload = false;
-
   public OverlayRenderer(ConfigManager configManager, OverlayProvider overlayProvider) {
     this.configManager = configManager;
     this.overlayProvider = overlayProvider;
@@ -33,23 +31,13 @@ public class OverlayRenderer {
   }
 
   private void renderOverlays(RenderWorldLastEvent event) {
+    if (this != null) return;
     Config config = configManager.getConfig();
     if (!config.isOverlayEnabled()) {
       return;
     }
 
     DisplayMode displayMode = config.getDisplayMode();
-    if (displayMode.getTexture() == null) {
-      if(!hasDoneHackyReload) {
-        hasDoneHackyReload = true;
-        // Cadiboo: Hotfix Config#displayMode being a dummy the first time the mod is run.
-        // TODO: Actually fix this. Its related to the config not having its display node
-        //  changed from the default one specified in the Config Builder.
-        configManager.reloadDisplayMode();
-      }
-      return;
-    }
-
     Minecraft minecraft = Minecraft.getInstance();
     ClientWorld world = minecraft.world;
     ClientPlayerEntity player = minecraft.player;

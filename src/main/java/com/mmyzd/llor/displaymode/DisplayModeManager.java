@@ -40,7 +40,7 @@ public class DisplayModeManager {
   private static final String RESOURCE_FOLDER_NAME = "displaymodes";
   private static final String RESOURCE_FILE_SUFFIX = ".json";
   private static final Gson GSON = new GsonBuilder()
-          .registerTypeAdapter(DisplayModeNode.class, new DisplayModeNode.Adapter()).create();
+      .registerTypeAdapter(DisplayModeNode.class, new DisplayModeNode.Adapter()).create();
 
   private Map<String, DisplayMode> displayModeByName = new HashMap<>();
   private DisplayMode[] displayModes = new DisplayMode[0];
@@ -71,12 +71,15 @@ public class DisplayModeManager {
   private ResourceLocation[] getAllCanonicalResourceLocations() {
     HashSet<String> paths = new HashSet<>();
     Collection<ClientResourcePackInfo> packInfos =
-            Minecraft.getInstance().getResourcePackList().getEnabledPacks();
+        Minecraft.getInstance().getResourcePackList().getEnabledPacks();
     packInfos.forEach(packInfo -> {
       try {
         IResourcePack pack = packInfo.getResourcePack();
-        Stream.of(0, 255).forEach(depthLimit -> pack.getAllResourceLocations(ResourcePackType.CLIENT_RESOURCES, RESOURCE_FOLDER_NAME,
-                depthLimit, path -> path.toLowerCase().endsWith(RESOURCE_FILE_SUFFIX)).stream()
+        Stream.of(0, 255)
+            .forEach(depthLimit -> pack
+                .getAllResourceLocations(ResourcePackType.CLIENT_RESOURCES, RESOURCE_FOLDER_NAME,
+                    depthLimit, path -> path.toLowerCase().endsWith(RESOURCE_FILE_SUFFIX))
+                .stream()
                 .filter(resourceLocation -> ForgeMod.ID.equals(resourceLocation.getNamespace()))
                 .forEach(resourceLocation -> paths.add(resourceLocation.getPath())));
       } catch (Exception exception) {
@@ -84,7 +87,7 @@ public class DisplayModeManager {
       }
     });
     return paths.stream().map(path -> new ResourceLocation(ForgeMod.ID, path))
-            .toArray(ResourceLocation[]::new);
+        .toArray(ResourceLocation[]::new);
   }
 
   private void reload() {
@@ -92,7 +95,7 @@ public class DisplayModeManager {
     for (ResourceLocation resourceLocation : getAllCanonicalResourceLocations()) {
       String path = resourceLocation.getPath();
       String name = path.substring(RESOURCE_FOLDER_NAME.length() + 1,
-              path.length() - RESOURCE_FILE_SUFFIX.length());
+          path.length() - RESOURCE_FILE_SUFFIX.length());
       DisplayMode displayMode = load(resourceLocation, name);
       if (displayMode != null) {
         displayModeByName.put(name, displayMode);
@@ -100,8 +103,8 @@ public class DisplayModeManager {
     }
     this.displayModeByName = displayModeByName;
     displayModes = displayModeByName.values().stream()
-            .sorted(Comparator.comparingInt(DisplayMode::getListingPriority))
-            .toArray(DisplayMode[]::new);
+        .sorted(Comparator.comparingInt(DisplayMode::getListingPriority))
+        .toArray(DisplayMode[]::new);
     MinecraftForge.EVENT_BUS.post(new DisplayModeUpdateEvent(this));
   }
 
@@ -152,16 +155,16 @@ public class DisplayModeManager {
   }
 
   private void displayException(Exception exception, ResourceLocation resourceLocation,
-                                String translationKey) {
+      String translationKey) {
     String path = resourceLocation.getPath();
     MinecraftForge.EVENT_BUS
-            .post(new MessageEvent(new FloatingMessage(I18n.format(translationKey, path),
-                    MESSAGE_IDENTIFIER_PREFIX + path, MESSAGE_DURATION_TICKS)));
+        .post(new MessageEvent(new FloatingMessage(I18n.format(translationKey, path),
+            MESSAGE_IDENTIFIER_PREFIX + path, MESSAGE_DURATION_TICKS)));
     exception.printStackTrace();
   }
 
   private static class EventHandler extends EventBusWeakSubscriber<DisplayModeManager>
-          implements ISelectiveResourceReloadListener {
+      implements ISelectiveResourceReloadListener {
 
     private EventHandler(DisplayModeManager displayModeManager) {
       super(displayModeManager);
@@ -173,7 +176,7 @@ public class DisplayModeManager {
 
     @Override
     public void onResourceManagerReload(IResourceManager resourceManager,
-                                        Predicate<IResourceType> resourcePredicate) {
+        Predicate<IResourceType> resourcePredicate) {
       with(DisplayModeManager::reload);
     }
   }
