@@ -1,7 +1,7 @@
 package com.mmyzd.llor.message;
 
 import java.util.ArrayList;
-import com.mmyzd.llor.util.EventBusWeakSubscriber;
+import com.mmyzd.llor.event.WeakEventSubscriber;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.common.MinecraftForge;
@@ -29,15 +29,10 @@ public class MessagePresenter {
     floatingMessages.add(message);
   }
 
-  private static class EventHandler extends EventBusWeakSubscriber<MessagePresenter> {
+  private static class EventHandler extends WeakEventSubscriber<MessagePresenter> {
 
     private EventHandler(MessagePresenter messagePresenter) {
       super(messagePresenter);
-    }
-
-    @SubscribeEvent
-    public void onMessage(MessageEvent event) {
-      with(messagePresenter -> messagePresenter.present(event.getMessage()));
     }
 
     @SubscribeEvent

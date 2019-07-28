@@ -3,6 +3,7 @@ package com.mmyzd.llor.displaymode;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -14,9 +15,9 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.mmyzd.llor.ForgeMod;
 import com.mmyzd.llor.displaymode.json.DisplayModeNode;
+import com.mmyzd.llor.event.WeakEventSubscriber;
 import com.mmyzd.llor.message.FloatingMessage;
-import com.mmyzd.llor.message.MessageEvent;
-import com.mmyzd.llor.util.EventBusWeakSubscriber;
+import com.mmyzd.llor.message.MessagePresenter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.ClientResourcePackInfo;
 import net.minecraft.client.resources.I18n;
@@ -44,9 +45,12 @@ public class DisplayModeManager {
 
   private Map<String, DisplayMode> displayModeByName = new HashMap<>();
   private DisplayMode[] displayModes = new DisplayMode[0];
+  private final ArrayList<Runnable> updateHandlers = new ArrayList<>();
+  private final MessagePresenter messagePresenter;
 
-  public DisplayModeManager() {
+  public DisplayModeManager(MessagePresenter messagePresenter) {
     MinecraftForge.EVENT_BUS.register(new EventHandler(this));
+    this.messagePresenter = messagePresenter;
   }
 
   public DisplayMode getDisplayMode(String name) {
@@ -61,6 +65,10 @@ public class DisplayModeManager {
       }
     }
     return displayModes.length > 0 ? displayModes[0] : new DisplayMode("standard");
+  }
+
+  public void onUpdate(Runnable updateHandler) {
+    updateHandlers.add(updateHandler);
   }
 
   // Minecraft's own code contains many bugs related to resource packs. The file path depth
@@ -105,7 +113,9 @@ public class DisplayModeManager {
     displayModes = displayModeByName.values().stream()
         .sorted(Comparator.comparingInt(DisplayMode::getListingPriority))
         .toArray(DisplayMode[]::new);
-    MinecraftForge.EVENT_BUS.post(new DisplayModeUpdateEvent(this));
+    for (Runnable updateHandler : updateHandlers) {
+      updateHandler.run();
+    }
   }
 
   private DisplayMode load(ResourceLocation resourceLocation, String name) {
@@ -157,13 +167,12 @@ public class DisplayModeManager {
   private void displayException(Exception exception, ResourceLocation resourceLocation,
       String translationKey) {
     String path = resourceLocation.getPath();
-    MinecraftForge.EVENT_BUS
-        .post(new MessageEvent(new FloatingMessage(I18n.format(translationKey, path),
-            MESSAGE_IDENTIFIER_PREFIX + path, MESSAGE_DURATION_TICKS)));
+    messagePresenter.present(new FloatingMessage(I18n.format(translationKey, path),
+        MESSAGE_IDENTIFIER_PREFIX + path, MESSAGE_DURATION_TICKS));
     exception.printStackTrace();
   }
 
-  private static class EventHandler extends EventBusWeakSubscriber<DisplayModeManager>
+  private static class EventHandler extends WeakEventSubscriber<DisplayModeManager>
       implements ISelectiveResourceReloadListener {
 
     private EventHandler(DisplayModeManager displayModeManager) {

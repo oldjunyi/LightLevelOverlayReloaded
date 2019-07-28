@@ -8,23 +8,19 @@ import net.minecraftforge.client.settings.KeyConflictContext;
 import net.minecraftforge.client.settings.KeyModifier;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
-import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
+import java.util.ArrayList;
 import org.lwjgl.glfw.GLFW;
 import com.mmyzd.llor.ForgeMod;
-import com.mmyzd.llor.config.ConfigManager.ConfigLoadEvent;
 import com.mmyzd.llor.displaymode.DisplayMode;
 import com.mmyzd.llor.displaymode.DisplayModeManager;
-import com.mmyzd.llor.displaymode.DisplayModeUpdateEvent;
+import com.mmyzd.llor.event.WeakEventSubscriber;
 import com.mmyzd.llor.message.FloatingMessage;
-import com.mmyzd.llor.message.MessageEvent;
-import com.mmyzd.llor.util.EventBusWeakSubscriber;
+import com.mmyzd.llor.message.MessagePresenter;
 
-@Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ConfigManager {
 
   private static final String TOGGLE_OVERLAY_ON_TRANSLATION_KEY = "llor.message.toggle_on";
@@ -46,11 +42,15 @@ public class ConfigManager {
   private final ForgeConfigSpec.BooleanValue announcingWhenSwitchDisplayMode;
   private final ForgeConfigSpec.ConfigValue<String> displayModeName;
 
-  private DisplayModeManager displayModeManager = new DisplayModeManager();
+  private final MessagePresenter messagePresenter;
+  private final DisplayModeManager displayModeManager;
+  private final ArrayList<Runnable> updateHandlers = new ArrayList<>();
 
-  public ConfigManager() {
-    System.out.println("ConfigManager() started");
-    MinecraftForge.EVENT_BUS.register(new EventHandler(this));
+  public ConfigManager(MessagePresenter messagePresenter) {
+    this.messagePresenter = messagePresenter;
+    this.displayModeManager = new DisplayModeManager(messagePresenter);
+
+    MinecraftForge.EVENT_BUS.register(new EventHandler(this, displayModeManager));
 
     hotkey = new KeyBinding("key.llor.hotkey", KeyConflictContext.IN_GAME,
         InputMappings.Type.KEYSYM.getOrMakeInput(GLFW.GLFW_KEY_F4), "key.categories.llor");
@@ -65,19 +65,19 @@ public class ConfigManager {
     configSpecBuilder.pop();
 
     configSpecBuilder.comment(
-        " The light level polling interval. Distant chunks will be updated less frequently. (default: " +
-            config.getPollingInterval() + ")");
+        " The light level polling interval. Distant chunks will be updated less frequently. (default: "
+            + config.getPollingInterval() + ")");
     configSpecBuilder.push("pollingInterval");
     pollingInterval =
         configSpecBuilder.defineInRange("milliseconds", config.getPollingInterval(), 10, 2000);
     configSpecBuilder.pop();
 
-    configSpecBuilder.comment(" The current display mode. The default avaliable modes are:\n" +
-        " - Standard mode. Displays green and red numbers representing safe and spawnable areas in night.\n" +
-        " - Minimal mode. Only displays red numbers on spawnable blocks.\n" +
-        " - Advanced mode. With extra orange numbers for blocks which are safe in day time but spawnable in night.\n" +
-        " - X mode. Displays X on blocks instead of numbers.\n" +
-        " Custom display mode can be added or overridden using resource pack.");
+    configSpecBuilder.comment(" The current display mode. The default avaliable modes are:\n"
+        + " - Standard mode. Displays green and red numbers representing safe and spawnable areas in night.\n"
+        + " - Minimal mode. Only displays red numbers on spawnable blocks.\n"
+        + " - Advanced mode. With extra orange numbers for blocks which are safe in day time but spawnable in night.\n"
+        + " - X mode. Displays X on blocks instead of numbers.\n"
+        + " Custom display mode can be added or overridden using resource pack.");
     configSpecBuilder.push("displayMode");
     displayModeName = configSpecBuilder.define("name", config.getDisplayMode().getName());
     configSpecBuilder.pop();
@@ -91,11 +91,20 @@ public class ConfigManager {
     configSpec = configSpecBuilder.build();
     ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, configSpec,
         ForgeMod.NAME + ".toml");
-    System.out.println("ConfigManager() finished");
   }
 
   public Config getConfig() {
     return config;
+  }
+
+  public void onUpdate(Runnable updateHandler) {
+    updateHandlers.add(updateHandler);
+  }
+
+  private void update() {
+    for (Runnable updateHandler : updateHandlers) {
+      updateHandler.run();
+    }
   }
 
   private void handleKeyInput() {
@@ -105,12 +114,13 @@ public class ConfigManager {
     if (KeyModifier.getActiveModifier() == KeyModifier.NONE) {
       configBuilder.setOverlayEnabled(!config.isOverlayEnabled());
       config = configBuilder.build();
-      MinecraftForge.EVENT_BUS.post(new ConfigUpdateEvent(this, config));
+      update();
       if (announcingWhenToggleOverlay.get()) {
-        MinecraftForge.EVENT_BUS.post(new MessageEvent(new FloatingMessage(
-            I18n.format(config.isOverlayEnabled() ? TOGGLE_OVERLAY_ON_TRANSLATION_KEY
-                : TOGGLE_OVERLAY_OFF_TRANSLATION_KEY),
-            MESSAGE_IDENTIFIER, MESSAGE_DURATION_TICKS)));
+        messagePresenter
+            .present(new FloatingMessage(
+                I18n.format(config.isOverlayEnabled() ? TOGGLE_OVERLAY_ON_TRANSLATION_KEY
+                    : TOGGLE_OVERLAY_OFF_TRANSLATION_KEY),
+                MESSAGE_IDENTIFIER, MESSAGE_DURATION_TICKS));
       }
     } else if (KeyModifier.SHIFT.isActive(null) && config.isOverlayEnabled()) {
       DisplayMode displayMode = displayModeManager.getNextDisplayMode(config.getDisplayMode());
@@ -119,72 +129,39 @@ public class ConfigManager {
       modConfig.getConfigData().set(displayModeName.getPath(), displayMode.getName());
       modConfig.save();
       if (announcingWhenSwitchDisplayMode.get()) {
-        MinecraftForge.EVENT_BUS.post(new MessageEvent(new FloatingMessage(
+        messagePresenter.present(new FloatingMessage(
             I18n.format(SWITCH_DISPLAY_MODE_TRANSLATION_KEY, displayMode.getDisplayName()),
-            MESSAGE_IDENTIFIER, MESSAGE_DURATION_TICKS)));
+            MESSAGE_IDENTIFIER, MESSAGE_DURATION_TICKS));
       }
     }
   }
 
-  private void loadConfigFromFile(ModConfig modConfig) {
-    System.out.println("loadConfigFromFile!");
+  public void loadConfigFromFile(ModConfig modConfig) {
     this.modConfig = modConfig;
     configBuilder.setRenderingRadius(renderingRadius.get());
     configBuilder.setPollingInterval(pollingInterval.get());
     configBuilder.setDisplayMode(displayModeManager.getDisplayMode(displayModeName.get()));
     config = configBuilder.build();
-    MinecraftForge.EVENT_BUS.post(new ConfigUpdateEvent(this, config));
+    update();
   }
 
-  private void loadDisplayModeFromManager(DisplayModeManager displayModeManager) {
-    System.out.println("loadDisplayModeFromManager!");
-    if (displayModeManager != this.displayModeManager) return;
+  private void loadDisplayMode() {
     DisplayMode displayMode = displayModeManager.getDisplayMode(config.getDisplayMode().getName());
     configBuilder.setDisplayMode(displayMode);
     config = configBuilder.build();
-    MinecraftForge.EVENT_BUS.post(new ConfigUpdateEvent(this, config));
+    update();
   }
 
-  @SubscribeEvent
-  public static void onModConfigLoading(ModConfig.Loading event) {
-    System.out.println("onModConfigLoading!");
-    MinecraftForge.EVENT_BUS.post(new ConfigLoadEvent(event.getConfig()));
-  }
+  private static class EventHandler extends WeakEventSubscriber<ConfigManager> {
 
-  public static class ConfigLoadEvent extends Event {
-
-    private final ModConfig config;
-
-    public ConfigLoadEvent(ModConfig config) {
-      this.config = config;
-    }
-
-    public ModConfig getConfig() {
-      return config;
-    }
-  }
-
-  private static class EventHandler extends EventBusWeakSubscriber<ConfigManager> {
-
-    private EventHandler(ConfigManager configManager) {
+    private EventHandler(ConfigManager configManager, DisplayModeManager displayModeManager) {
       super(configManager);
+      displayModeManager.onUpdate(() -> with(ConfigManager::loadDisplayMode));
     }
 
     @SubscribeEvent
     public void onKeyInput(KeyInputEvent event) {
       with(ConfigManager::handleKeyInput);
-    }
-
-    @SubscribeEvent
-    public void onReload(ConfigLoadEvent event) {
-      System.out.println("onReload!");
-      with(configManager -> configManager.loadConfigFromFile(event.getConfig()));
-    }
-
-    @SubscribeEvent
-    public void onDisplayModeUpdate(DisplayModeUpdateEvent event) {
-      System.out.println("onDisplayModeUpdate!");
-      with(configManager -> configManager.loadDisplayModeFromManager(configManager.displayModeManager));
     }
   }
 }

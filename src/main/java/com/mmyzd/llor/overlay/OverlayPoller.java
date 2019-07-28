@@ -95,8 +95,8 @@ public class OverlayPoller extends Thread {
         int chunkDistance = Math.max(chunkDistanceX, chunkDistanceZ);
 
         ArrayList<Overlay> chunk;
-        if (chunkDistance == 0 || loopIndex % chunkDistance == 0 ||
-            chunks.length != this.chunks.length) {
+        if (chunkDistance == 0 || loopIndex % chunkDistance == 0
+            || chunks.length != this.chunks.length) {
           chunk = createOverlaysForChunk(world, chunkX, chunkZ, playerY);
         } else {
           chunk = this.chunks[arrayX][arrayZ];
@@ -143,23 +143,23 @@ public class OverlayPoller extends Thread {
           spawnBlockState = chunk.getBlockState(spawnBlockPos);
 
           Block spawnBlock = spawnBlockState.getBlock();
-          if (spawnBlock == Blocks.AIR || spawnBlock == Blocks.BEDROCK ||
-              spawnBlock == Blocks.BARRIER || !spawnBlockState.func_215682_a(world, spawnBlockPos,
-                  Minecraft.getInstance().player)) {
+          if (spawnBlock == Blocks.AIR || spawnBlock == Blocks.BEDROCK
+              || spawnBlock == Blocks.BARRIER || !spawnBlockState.func_215682_a(world,
+                  spawnBlockPos, Minecraft.getInstance().player)) {
             continue;
           }
 
-          if (Block.isOpaque(upperBlockState.getCollisionShape(world, upperBlockPos)) ||
-              upperBlockState.canProvidePower() || upperBlockState.isIn(BlockTags.RAILS) ||
-              upperBlockState.getCollisionShape(world, upperBlockPos)
-                  .getEnd(Direction.Axis.Y) > 0 ||
-              !upperBlockState.getFluidState().isEmpty()) {
+          if (Block.isOpaque(upperBlockState.getCollisionShape(world, upperBlockPos))
+              || upperBlockState.canProvidePower() || upperBlockState.isIn(BlockTags.RAILS)
+              || upperBlockState.getCollisionShape(world, upperBlockPos)
+                  .getEnd(Direction.Axis.Y) > 0
+              || !upperBlockState.getFluidState().isEmpty()) {
             continue;
           }
 
           double renderingPosY = posY + 1.01;
-          if (upperBlockState.getShape(world, upperBlockPos).isEmpty() &&
-              upperBlockState.isSolid()) {
+          if (upperBlockState.getShape(world, upperBlockPos).isEmpty()
+              && upperBlockState.isSolid()) {
             renderingPosY += Math.max(
                 upperBlockState.getRenderShape(world, upperBlockPos).getEnd(Direction.Axis.Y), 0);
           }

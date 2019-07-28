@@ -1,10 +1,10 @@
-package com.mmyzd.llor.util;
+package com.mmyzd.llor.event;
 
 import net.minecraftforge.common.MinecraftForge;
 
-public class EventBusWeakSubscriber<T> extends WeakDataAccessor<T> {
+public class WeakEventSubscriber<T> extends WeakDataAccessor<T> {
 
-  public EventBusWeakSubscriber(T instance) {
+  public WeakEventSubscriber(T instance) {
     super(instance);
   }
 

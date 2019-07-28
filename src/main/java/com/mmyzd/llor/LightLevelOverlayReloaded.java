@@ -1,32 +1,31 @@
 package com.mmyzd.llor;
 
-import java.util.ArrayList;
 import com.mmyzd.llor.config.ConfigManager;
 import com.mmyzd.llor.message.MessagePresenter;
 import com.mmyzd.llor.overlay.OverlayProvider;
 import com.mmyzd.llor.overlay.OverlayRenderer;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.config.ModConfig;
 
 @Mod(ForgeMod.ID)
+@Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
 public class LightLevelOverlayReloaded implements ForgeMod {
 
-  private final ArrayList<Object> services = new ArrayList<>();
+  private static MessagePresenter messagePresenter;
+  private static ConfigManager configManager;
+  private static OverlayProvider overlayProvider;
+  private static OverlayRenderer overlayRenderer;
 
   public LightLevelOverlayReloaded() {
-    FMLJavaModLoadingContext.get().getModEventBus().addListener(this::setup);
+    messagePresenter = new MessagePresenter();
+    configManager = new ConfigManager(messagePresenter);
+    overlayProvider = new OverlayProvider(configManager);
+    overlayRenderer = new OverlayRenderer(configManager, overlayProvider);
   }
 
-  public void setup(FMLCommonSetupEvent event) {
-    MessagePresenter messagePresenter = new MessagePresenter();
-    services.add(messagePresenter);
-
-    ConfigManager configManager = new ConfigManager();
-    services.add(configManager);
-
-    OverlayProvider overlayProvider = new OverlayProvider(configManager);
-    OverlayRenderer overlayRenderer = new OverlayRenderer(configManager, overlayProvider);
-    services.add(overlayRenderer);    
+  @SubscribeEvent
+  public static void onModConfigLoading(ModConfig.Loading event) {
+    configManager.loadConfigFromFile(event.getConfig());
   }
 }

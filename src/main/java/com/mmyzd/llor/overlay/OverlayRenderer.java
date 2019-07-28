@@ -6,7 +6,7 @@ import com.mmyzd.llor.config.Config;
 import com.mmyzd.llor.config.ConfigManager;
 import com.mmyzd.llor.displaymode.DisplayMode;
 import com.mmyzd.llor.displaymode.datatype.TextureCoordinates;
-import com.mmyzd.llor.util.EventBusWeakSubscriber;
+import com.mmyzd.llor.event.WeakEventSubscriber;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -31,7 +31,6 @@ public class OverlayRenderer {
   }
 
   private void renderOverlays(RenderWorldLastEvent event) {
-    if (this != null) return;
     Config config = configManager.getConfig();
     if (!config.isOverlayEnabled()) {
       return;
@@ -92,7 +91,7 @@ public class OverlayRenderer {
     }
   }
 
-  private static class EventHandler extends EventBusWeakSubscriber<OverlayRenderer> {
+  private static class EventHandler extends WeakEventSubscriber<OverlayRenderer> {
 
     private EventHandler(OverlayRenderer overlayRenderer) {
       super(overlayRenderer);

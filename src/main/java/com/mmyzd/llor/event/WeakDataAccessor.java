@@ -1,4 +1,4 @@
-package com.mmyzd.llor.util;
+package com.mmyzd.llor.event;
 
 import java.lang.ref.WeakReference;
 import java.util.function.Consumer;
