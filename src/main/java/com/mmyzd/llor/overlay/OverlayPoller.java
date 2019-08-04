@@ -2,20 +2,20 @@ package com.mmyzd.llor.overlay;
 
 import java.util.ArrayList;
 import com.mmyzd.llor.config.Config;
-import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.multiplayer.ClientChunkProvider;
 import net.minecraft.client.world.ClientWorld;
-import net.minecraft.tags.BlockTags;
+import net.minecraft.entity.EntityType;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.LightType;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.ChunkStatus;
 import net.minecraft.world.lighting.WorldLightManager;
+import net.minecraft.world.spawner.WorldEntitySpawner;
 
 public class OverlayPoller extends Thread {
 
@@ -119,7 +119,13 @@ public class OverlayPoller extends Thread {
     }
 
     WorldLightManager lightmanager = chunkProvider.getLightManager();
-    int sunLightReduction = world.getSkylightSubtracted();
+
+    double sunLightReductionRatioByRain = 1 - world.getRainStrength(1.0f) * 5 / 16;
+    double sunLightReductionRatioByThunder = 1 - world.getThunderStrength(1.0f) * 5 / 16;
+    double sunLightReductionRatioByTime = 0.5 + 2 * MathHelper
+        .clamp(MathHelper.cos(world.getCelestialAngle(1.0f) * (float) Math.PI * 2), -0.25, 0.25);
+    int sunLightReduction = (int) ((1 - sunLightReductionRatioByRain
+        * sunLightReductionRatioByThunder * sunLightReductionRatioByTime) * 11);
 
     Overlay.Builder overlayBuilder = new Overlay.Builder();
     ArrayList<Overlay> overlays = new ArrayList<>();
@@ -142,18 +148,22 @@ public class OverlayPoller extends Thread {
           upperBlockState = spawnBlockState;
           spawnBlockState = chunk.getBlockState(spawnBlockPos);
 
-          Block spawnBlock = spawnBlockState.getBlock();
-          if (spawnBlock == Blocks.AIR || spawnBlock == Blocks.BEDROCK
-              || spawnBlock == Blocks.BARRIER || !spawnBlockState.func_215682_a(world,
-                  spawnBlockPos, Minecraft.getInstance().player)) {
-            continue;
-          }
-
-          if (Block.isOpaque(upperBlockState.getCollisionShape(world, upperBlockPos))
-              || upperBlockState.canProvidePower() || upperBlockState.isIn(BlockTags.RAILS)
+          if (!spawnBlockState.canEntitySpawn(chunk, spawnBlockPos, EntityType.ZOMBIE_PIGMAN)
+              || !WorldEntitySpawner.isSpawnableSpace(chunk, upperBlockPos, upperBlockState,
+                  upperBlockState.getFluidState())
               || upperBlockState.getCollisionShape(world, upperBlockPos)
-                  .getEnd(Direction.Axis.Y) > 0
-              || !upperBlockState.getFluidState().isEmpty()) {
+                  .getEnd(Direction.Axis.Y) == 0) {
+            // Minecraft 1.14:
+            // 1. Check canEntitySpawn() on spawn block for the spawning entities.
+            // 2. Check isSpawnableSpace() for two blocks above the spawn block.
+            // 3. Check if the spawning entity collides with blocks.
+            // Light Level Overlay Reloaded:
+            // 1. Check canEntitySpawn() on spawn block for zombie pigman only.
+            // ----- This covers all vanilla hostile mobs (except for polar bear on ice).
+            // 2. Check isSpawnableSpace() for only one block above the spawn block.
+            // ----- It is strange if a number only reveals after the 2nd block above it is removed.
+            // 3. Check if the block above the spawn block has non-zero collision shape in Y axis.
+            // ----- It is not correct for some rare cases but it is fast and mob-irrelevant.
             continue;
           }
 
@@ -182,5 +192,4 @@ public class OverlayPoller extends Thread {
 
     return overlays;
   }
-
 }

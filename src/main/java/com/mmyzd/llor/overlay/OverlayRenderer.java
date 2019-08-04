@@ -7,6 +7,7 @@ import com.mmyzd.llor.config.ConfigManager;
 import com.mmyzd.llor.displaymode.DisplayMode;
 import com.mmyzd.llor.displaymode.datatype.TextureCoordinates;
 import com.mmyzd.llor.event.WeakEventSubscriber;
+import com.mojang.blaze3d.platform.GlStateManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -15,6 +16,7 @@ import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.MathHelper;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -37,6 +39,10 @@ public class OverlayRenderer {
     }
 
     DisplayMode displayMode = config.getDisplayMode();
+    if (displayMode.getTexture() == null) {
+      return;
+    }
+
     Minecraft minecraft = Minecraft.getInstance();
     ClientWorld world = minecraft.world;
     ClientPlayerEntity player = minecraft.player;
@@ -50,15 +56,18 @@ public class OverlayRenderer {
 
     minecraft.getTextureManager().bindTexture(displayMode.getTexture());
     minecraft.gameRenderer.enableLightmap();
-
+    GlStateManager.enableBlend();
+    GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA,
+        GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
     BufferBuilder vertexBuffer = Tessellator.getInstance().getBuffer();
     vertexBuffer.begin(GL11.GL_QUADS, DefaultVertexFormats.BLOCK);
     vertexBuffer.setTranslation(-viewX, -viewY, -viewZ);
 
     renderOverlays(world, vertexBuffer, displayMode, overlayProvider.getOverlays());
+    Tessellator.getInstance().draw();
 
     vertexBuffer.setTranslation(0, 0, 0);
-    Tessellator.getInstance().draw();
+    GlStateManager.disableBlend();
     minecraft.gameRenderer.disableLightmap();
   }
 
@@ -76,15 +85,17 @@ public class OverlayRenderer {
       }
 
       BlockPos pos = overlay.getPos();
+      double opacity = 1 - displayMode.getTransparency();
+      int alpha = MathHelper.clamp((int) Math.round(opacity * 255), 0, 255);
       int brightness = world.getBlockState(pos).getPackedLightmapCoords(world, pos);
       int skyLumin = (brightness >> 16) & 0xFFFF;
       int blockLumin = brightness & 0xFFFF;
       blockLumin = (int) Math.round((blockLumin * (1 - luminosity)) + 240 * luminosity + 1e-6);
-      blockLumin = Math.min(Math.max(blockLumin, 0), 240);
+      blockLumin = MathHelper.clamp(blockLumin, 0, 240);
 
       for (int index = 0; index < 4; ++index) {
         vertexBuffer.pos(overlay.getX(index), overlay.getY(index), overlay.getZ(index))
-            .color(255, 255, 255, 255)
+            .color(255, 255, 255, alpha)
             .tex(textureCoordinates.getU(index), textureCoordinates.getV(index))
             .lightmap(skyLumin, blockLumin).endVertex();
       }

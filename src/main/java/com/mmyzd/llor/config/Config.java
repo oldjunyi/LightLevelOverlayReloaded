@@ -43,7 +43,7 @@ public class Config {
       overlayEnabled = false;
       renderingRadius = 3;
       pollingInterval = 100;
-      displayMode = new DisplayMode("standard");
+      displayMode = new DisplayMode("<null>");
     }
 
     public void setOverlayEnabled(boolean overlayEnabled) {

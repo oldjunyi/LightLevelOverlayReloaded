@@ -12,8 +12,9 @@ public class DisplayMode {
 
   private final String name;
   private final String displayName;
-  private final int listingPriority;
+  private final double orderIndex;
   private final double luminosity;
+  private final double transparency;
   private final ResourceLocation texture;
   private final TextureCoordinates[][][] textureCoordinatesByLightLevels;
 
@@ -21,16 +22,18 @@ public class DisplayMode {
     this.name = name;
     if (node != null && node.isValid()) {
       displayName = (node.getDisplayName() != null) ? node.getDisplayName() : name;
-      listingPriority = node.getListingPriority();
+      orderIndex = node.getOrderIndex();
       luminosity = node.getLuminosity();
+      transparency = node.getTransparency();
       texture = new ResourceLocation(ForgeMod.ID, node.getTexturePath());
       textureCoordinatesByLightLevels =
           new TextureCoordinates[LightRange.UPPER_BOUND][LightRange.UPPER_BOUND][LightRange.UPPER_BOUND];
       createMappings(node);
     } else {
       displayName = name;
-      listingPriority = 0;
+      orderIndex = 0;
       luminosity = 0;
+      transparency = 0;
       texture = null;
       textureCoordinatesByLightLevels = null;
     }
@@ -43,17 +46,21 @@ public class DisplayMode {
   public String getName() {
     return name;
   }
-  
+
   public String getDisplayName() {
     return displayName;
   }
 
-  public int getListingPriority() {
-    return listingPriority;
+  public double getOrderIndex() {
+    return orderIndex;
   }
 
   public double getLuminosity() {
     return luminosity;
+  }
+
+  public double getTransparency() {
+    return transparency;
   }
 
   public ResourceLocation getTexture() {

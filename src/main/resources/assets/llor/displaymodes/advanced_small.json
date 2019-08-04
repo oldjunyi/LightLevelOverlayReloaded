@@ -3,8 +3,9 @@
     "texture_path": "textures/overlay_small.png",
     "texture_rows": 8,
     "texture_columns": 8,
-    "listing_priority": 70000,
+    "order_index": 7,
     "luminosity": 0.4,
+    "disabled": true,
     "block_light": {
         "0..7": {
             "sky_light": {

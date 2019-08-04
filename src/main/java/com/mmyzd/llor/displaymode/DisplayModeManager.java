@@ -55,20 +55,30 @@ public class DisplayModeManager {
 
   public DisplayMode getDisplayMode(String name) {
     DisplayMode displayMode = displayModeByName.get(name);
-    return displayMode != null ? displayMode : new DisplayMode(name);
+    return displayMode != null ? displayMode : getFallbackDisplayMode();
   }
 
-  public DisplayMode getNextDisplayMode(DisplayMode currentDisplayMode) {
+  public DisplayMode getNextDisplayMode(String name) {
     for (int index = 0; index < displayModes.length; ++index) {
-      if (displayModes[index].getName().equals(currentDisplayMode.getName())) {
+      if (displayModes[index].getName().equals(name)) {
         return displayModes[(index + 1) % displayModes.length];
       }
     }
-    return displayModes.length > 0 ? displayModes[0] : new DisplayMode("standard");
+    return getFallbackDisplayMode();
+  }
+
+  private DisplayMode getFallbackDisplayMode() {
+    return displayModes.length > 0 ? displayModes[0] : new DisplayMode("<null>");
   }
 
   public void onUpdate(Runnable updateHandler) {
     updateHandlers.add(updateHandler);
+  }
+
+  private void update() {
+    for (Runnable updateHandler : updateHandlers) {
+      updateHandler.run();
+    }
   }
 
   // Minecraft's own code contains many bugs related to resource packs. The file path depth
@@ -110,12 +120,9 @@ public class DisplayModeManager {
       }
     }
     this.displayModeByName = displayModeByName;
-    displayModes = displayModeByName.values().stream()
-        .sorted(Comparator.comparingInt(DisplayMode::getListingPriority))
-        .toArray(DisplayMode[]::new);
-    for (Runnable updateHandler : updateHandlers) {
-      updateHandler.run();
-    }
+    this.displayModes = displayModeByName.values().stream()
+        .sorted(Comparator.comparingDouble(DisplayMode::getOrderIndex)).toArray(DisplayMode[]::new);
+    update();
   }
 
   private DisplayMode load(ResourceLocation resourceLocation, String name) {
@@ -167,7 +174,7 @@ public class DisplayModeManager {
   private void displayException(Exception exception, ResourceLocation resourceLocation,
       String translationKey) {
     String path = resourceLocation.getPath();
-    messagePresenter.present(new FloatingMessage(I18n.format(translationKey, path),
+    messagePresenter.present(new FloatingMessage(I18n.format(translationKey),
         MESSAGE_IDENTIFIER_PREFIX + path, MESSAGE_DURATION_TICKS));
     exception.printStackTrace();
   }

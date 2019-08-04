@@ -4,6 +4,7 @@ import java.io.IOException;
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
+import net.minecraft.util.math.MathHelper;
 
 public class DisplayModeNode extends LightTypeNode {
 
@@ -11,15 +12,19 @@ public class DisplayModeNode extends LightTypeNode {
   private static final String TEXTURE_PATH_KEY = "texture_path";
   private static final String TEXTURE_ROWS_KEY = "texture_rows";
   private static final String TEXTURE_COLUMNS_KEY = "texture_columns";
-  private static final String LISTING_PRIORITY_KEY = "listing_priority";
+  private static final String ORDER_INDEX_KEY = "order_index";
   private static final String LUMINOSITY_KEY = "luminosity";
+  private static final String TRANSPARENCY_KEY = "transparency";
+  private static final String DISABLED_KEY = "disabled";
 
   private String displayName;
   private String texturePath;
   private Integer textureRows;
   private Integer textureColumns;
-  private Integer listingPriority;
+  private Double orderIndex;
   private Double luminosity;
+  private Double transparency;
+  private Boolean disabled;
 
   public String getDisplayName() {
     return displayName;
@@ -37,17 +42,25 @@ public class DisplayModeNode extends LightTypeNode {
     return textureColumns != null ? textureColumns : 0;
   }
 
-  public int getListingPriority() {
-    return listingPriority != null ? listingPriority : 0;
+  public double getOrderIndex() {
+    return orderIndex != null ? orderIndex : 0;
   }
 
   public double getLuminosity() {
-    return Math.min(Math.max((luminosity != null ? luminosity : 0), 0), 1);
+    return MathHelper.clamp(luminosity != null ? luminosity : 0, 0, 1);
+  }
+
+  public double getTransparency() {
+    return MathHelper.clamp(transparency != null ? transparency : 0, 0, 1);
+  }
+
+  public boolean isDisabled() {
+    return disabled != null ? disabled : false;
   }
 
   public boolean isValid() {
-    return texturePath != null && textureRows != null && textureRows > 0 &&
-        textureColumns != null && textureColumns > 0;
+    return !isDisabled() && texturePath != null && textureRows != null && textureRows > 0
+        && textureColumns != null && textureColumns > 0;
   }
 
   @Override
@@ -64,11 +77,17 @@ public class DisplayModeNode extends LightTypeNode {
     if (textureColumns != null) {
       writer.name(TEXTURE_COLUMNS_KEY).value(textureColumns);
     }
-    if (listingPriority != null) {
-      writer.name(LISTING_PRIORITY_KEY).value(listingPriority);
+    if (orderIndex != null) {
+      writer.name(ORDER_INDEX_KEY).value(orderIndex);
     }
     if (luminosity != null) {
       writer.name(LUMINOSITY_KEY).value(luminosity);
+    }
+    if (transparency != null) {
+      writer.name(TRANSPARENCY_KEY).value(transparency);
+    }
+    if (disabled != null) {
+      writer.name(DISABLED_KEY).value(disabled);
     }
     super.writePropertiesToJson(writer);
   }
@@ -88,12 +107,18 @@ public class DisplayModeNode extends LightTypeNode {
       case TEXTURE_COLUMNS_KEY:
         int textureColumns = reader.nextInt();
         return () -> this.textureColumns = textureColumns;
-      case LISTING_PRIORITY_KEY:
-        int listingPriority = reader.nextInt();
-        return () -> this.listingPriority = listingPriority;
+      case ORDER_INDEX_KEY:
+        double orderIndex = reader.nextInt();
+        return () -> this.orderIndex = orderIndex;
       case LUMINOSITY_KEY:
         double luminosity = reader.nextDouble();
         return () -> this.luminosity = luminosity;
+      case TRANSPARENCY_KEY:
+        double transparency = reader.nextDouble();
+        return () -> this.transparency = transparency;
+      case DISABLED_KEY:
+        boolean disabled = reader.nextBoolean();
+        return () -> this.disabled = disabled;
     }
     return super.readPropertyFromJson(propertyName, reader);
   }

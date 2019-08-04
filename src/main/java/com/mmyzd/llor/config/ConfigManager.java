@@ -79,7 +79,7 @@ public class ConfigManager {
         + " - X mode. Displays X on blocks instead of numbers.\n"
         + " Custom display mode can be added or overridden using resource pack.");
     configSpecBuilder.push("displayMode");
-    displayModeName = configSpecBuilder.define("name", config.getDisplayMode().getName());
+    displayModeName = configSpecBuilder.define("name", "standard");
     configSpecBuilder.pop();
 
     configSpecBuilder.comment(" User interaction announcement.");
@@ -123,7 +123,8 @@ public class ConfigManager {
                 MESSAGE_IDENTIFIER, MESSAGE_DURATION_TICKS));
       }
     } else if (KeyModifier.SHIFT.isActive(null) && config.isOverlayEnabled()) {
-      DisplayMode displayMode = displayModeManager.getNextDisplayMode(config.getDisplayMode());
+      DisplayMode displayMode =
+          displayModeManager.getNextDisplayMode(config.getDisplayMode().getName());
       configBuilder.setDisplayMode(displayMode);
       config = configBuilder.build();
       modConfig.getConfigData().set(displayModeName.getPath(), displayMode.getName());

@@ -3,8 +3,9 @@
     "texture_path": "textures/overlay_small.png",
     "texture_rows": 8,
     "texture_columns": 8,
-    "listing_priority": 60000,
+    "order_index": 6,
     "luminosity": 0.4,
+    "disabled": true,
     "block_light": {
         "0": [0, 0],
         "1": [0, 1],
