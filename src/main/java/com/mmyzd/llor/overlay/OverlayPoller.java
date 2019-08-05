@@ -1,6 +1,7 @@
 package com.mmyzd.llor.overlay;
 
 import java.util.ArrayList;
+import java.util.function.BiPredicate;
 import com.mmyzd.llor.config.Config;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.Minecraft;
@@ -8,9 +9,9 @@ import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.multiplayer.ClientChunkProvider;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.EntityType;
-import net.minecraft.util.BlockRenderLayer;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.shapes.VoxelShape;
 import net.minecraft.world.LightType;
@@ -19,67 +20,50 @@ import net.minecraft.world.chunk.ChunkStatus;
 import net.minecraft.world.lighting.WorldLightManager;
 import net.minecraft.world.spawner.WorldEntitySpawner;
 
-public class OverlayPoller extends Thread {
+public class OverlayPoller {
 
-  private volatile ArrayList<Overlay> overlays = new ArrayList<Overlay>();
-  private volatile Config config;
-  private ArrayList<Overlay>[][] chunks = createOverlaysMatrix(0);
+  private static final ArrayList<Overlay> EMPTY_OVERLAYS = new ArrayList<Overlay>();
+  private static final ArrayList<Overlay>[][] EMPTY_OVERLAYS_PER_CHUNK =
+      createChunkOverlaysMatrix(0);
 
-  public OverlayPoller(Config config) {
-    this.config = config;
-  }
-
-  public Config getConfig() {
-    return config;
-  }
-
-  public void setConfig(Config config) {
-    this.config = config;
-  }
+  private ArrayList<Overlay> overlays = EMPTY_OVERLAYS;
+  private ArrayList<Overlay>[][] overlaysPerChunk = EMPTY_OVERLAYS_PER_CHUNK;
 
   public ArrayList<Overlay> getOverlays() {
     return overlays;
   }
 
-  public void run() {
-    long loopIndex = 0;
-    while (true) {
-      Config config = this.config;
-      updateOverlays(config, loopIndex++);
-      try {
-        sleep(config.getPollingInterval());
-      } catch (Exception exception) {
-        exception.printStackTrace();
-      }
-    }
+  public void removeOverlays() {
+    overlays = EMPTY_OVERLAYS;
+    overlaysPerChunk = EMPTY_OVERLAYS_PER_CHUNK;
   }
 
-  @SuppressWarnings("unchecked")
-  private static ArrayList<Overlay>[][] createOverlaysMatrix(int size) {
-    return new ArrayList[size][size];
-  }
-
-  private void updateOverlays(Config config, long loopIndex) {
-    if (!config.isOverlayEnabled()) {
-      return;
-    }
-
+  public void updateOverlays(Config config, BiPredicate<Integer, Integer> canUpdate) {
     Minecraft minecraft = Minecraft.getInstance();
     ClientWorld world = minecraft.world;
     ClientPlayerEntity player = minecraft.player;
-    if (world == null || player == null) {
-      overlays = new ArrayList<Overlay>();
-      chunks = createOverlaysMatrix(0);
+    if (world == null || player == null || !config.isOverlayEnabled()) {
+      removeOverlays();
       return;
     }
+
+    ClientChunkProvider chunkProvider = world.getChunkProvider();
+    WorldLightManager lightmanager = chunkProvider.getLightManager();
 
     int playerChunkX = player.chunkCoordX;
     int playerChunkZ = player.chunkCoordZ;
     int playerY = (int) Math.floor(player.posY + player.getEyeHeight() + 1e-6);
 
+    double sunLightReductionRatioByRain = 1 - world.getRainStrength(1.0f) * 5 / 16;
+    double sunLightReductionRatioByThunder = 1 - world.getThunderStrength(1.0f) * 5 / 16;
+    double sunLightReductionRatioByTime = 0.5 + 2 * MathHelper
+        .clamp(MathHelper.cos(world.getCelestialAngle(1.0f) * (float) Math.PI * 2), -0.25, 0.25);
+    int sunLightReduction = (int) ((1 - sunLightReductionRatioByRain
+        * sunLightReductionRatioByThunder * sunLightReductionRatioByTime) * 11);
+
     int radius = config.getRenderingRadius();
     int diameter = radius * 2 + 1;
-    ArrayList<Overlay>[][] chunks = createOverlaysMatrix(diameter);
+    ArrayList<Overlay>[][] overlaysPerChunk = createChunkOverlaysMatrix(diameter);
     ArrayList<Overlay> overlays = new ArrayList<>();
 
     int minChunkX = playerChunkX - radius;
@@ -92,52 +76,46 @@ public class OverlayPoller extends Thread {
         int arrayX = (chunkX % diameter + diameter) % diameter;
         int arrayZ = (chunkZ % diameter + diameter) % diameter;
 
-        int chunkDistanceX = Math.abs(chunkX - playerChunkX);
-        int chunkDistanceZ = Math.abs(chunkZ - playerChunkZ);
-        int chunkDistance = Math.max(chunkDistanceX, chunkDistanceZ);
+        int chunkOffsetX = chunkX - playerChunkX;
+        int chunkOffsetZ = chunkZ - playerChunkZ;
 
-        ArrayList<Overlay> chunk;
-        if (chunkDistance == 0 || loopIndex % chunkDistance == 0
-            || chunks.length != this.chunks.length) {
-          chunk = createOverlaysForChunk(world, chunkX, chunkZ, playerY);
+        ArrayList<Overlay> chunkOverlays;
+        if (canUpdate.test(chunkOffsetX, chunkOffsetZ)) {
+          Chunk chunk = chunkProvider.getChunk(chunkX, chunkZ, ChunkStatus.FULL, false);
+          chunkOverlays = extractChunkOverlays(chunk, lightmanager, playerY, sunLightReduction);
+        } else if (overlaysPerChunk.length != this.overlaysPerChunk.length) {
+          chunkOverlays = EMPTY_OVERLAYS;
         } else {
-          chunk = this.chunks[arrayX][arrayZ];
+          chunkOverlays = this.overlaysPerChunk[arrayX][arrayZ];
         }
-        chunks[arrayX][arrayZ] = chunk;
-        overlays.addAll(chunk);
+        overlaysPerChunk[arrayX][arrayZ] = chunkOverlays;
+        overlays.addAll(chunkOverlays);
       }
     }
 
     this.overlays = overlays;
-    this.chunks = chunks;
+    this.overlaysPerChunk = overlaysPerChunk;
   }
 
-  public ArrayList<Overlay> createOverlaysForChunk(ClientWorld world, int chunkX, int chunkZ,
-      int playerY) {
-    ClientChunkProvider chunkProvider = world.getChunkProvider();
-    Chunk chunk = chunkProvider.getChunk(chunkX, chunkZ, ChunkStatus.FULL, false);
+  private ArrayList<Overlay> extractChunkOverlays(Chunk chunk, WorldLightManager lightManager,
+      int playerY, int sunLightReduction) {
     if (chunk == null) {
       return new ArrayList<>();
     }
 
-    WorldLightManager lightmanager = chunkProvider.getLightManager();
-
-    double sunLightReductionRatioByRain = 1 - world.getRainStrength(1.0f) * 5 / 16;
-    double sunLightReductionRatioByThunder = 1 - world.getThunderStrength(1.0f) * 5 / 16;
-    double sunLightReductionRatioByTime = 0.5 + 2 * MathHelper
-        .clamp(MathHelper.cos(world.getCelestialAngle(1.0f) * (float) Math.PI * 2), -0.25, 0.25);
-    int sunLightReduction = (int) ((1 - sunLightReductionRatioByRain
-        * sunLightReductionRatioByThunder * sunLightReductionRatioByTime) * 11);
-
     Overlay.Builder overlayBuilder = new Overlay.Builder();
     ArrayList<Overlay> overlays = new ArrayList<>();
 
-    for (int offsetX = 0; offsetX < 16; offsetX++) {
-      for (int offsetZ = 0; offsetZ < 16; offsetZ++) {
-        int posX = (chunkX << 4) + offsetX;
-        int posZ = (chunkZ << 4) + offsetZ;
+    ChunkPos chunkPos = chunk.getPos();
+    int posXStart = chunkPos.getXStart();
+    int posXEnd = chunkPos.getXEnd();
+    int posZStart = chunkPos.getZStart();
+    int posZEnd = chunkPos.getZEnd();
+
+    for (int posX = posXStart; posX <= posXEnd; posX++) {
+      for (int posZ = posZStart; posZ <= posZEnd; posZ++) {
         int maxY = playerY + 4;
-        int minY = Math.max(playerY - 40, 0);
+        int minY = Math.max(playerY - 36, 0);
 
         BlockPos upperBlockPos = null;
         BlockPos spawnBlockPos = new BlockPos(posX, maxY, posZ);
@@ -169,15 +147,15 @@ public class OverlayPoller extends Thread {
             continue;
           }
 
-          double renderingPosY = posY + 1.001;
+          double renderingPosY = posY + 1.001953125;
           if (upperBlockState.isSolid()) {
             // Put numbers on top of solid-rendered blocks. E.g. the snow layer.
             VoxelShape renderShape = upperBlockState.getRenderShape(chunk, upperBlockPos);
             renderingPosY += Math.max(renderShape.getEnd(Direction.Axis.Y), 0);
           }
 
-          int blockLight = lightmanager.getLightEngine(LightType.BLOCK).getLightFor(upperBlockPos);
-          int skyLight = lightmanager.getLightEngine(LightType.SKY).getLightFor(upperBlockPos);
+          int blockLight = lightManager.getLightEngine(LightType.BLOCK).getLightFor(upperBlockPos);
+          int skyLight = lightManager.getLightEngine(LightType.SKY).getLightFor(upperBlockPos);
           int sunLight = Math.max(skyLight - sunLightReduction, 0);
 
           overlayBuilder.setPos(upperBlockPos);
@@ -193,5 +171,10 @@ public class OverlayPoller extends Thread {
     }
 
     return overlays;
+  }
+
+  @SuppressWarnings("unchecked")
+  private static ArrayList<Overlay>[][] createChunkOverlaysMatrix(int size) {
+    return new ArrayList[size][size];
   }
 }

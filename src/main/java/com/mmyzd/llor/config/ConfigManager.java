@@ -24,6 +24,9 @@ import com.mmyzd.llor.message.MessagePresenter;
 public class ConfigManager {
 
   private static final String DEFAULT_DISPLAY_MODE_NAME = "standard";
+  private static final int DEFAULT_RENDERING_RADIUS = 3;
+  private static final int DEFAULT_POLLING_INTERVAL = 3;
+
   private static final String TOGGLE_OVERLAY_ON_TRANSLATION_KEY = "llor.message.toggle_on";
   private static final String TOGGLE_OVERLAY_OFF_TRANSLATION_KEY = "llor.message.toggle_off";
   private static final String SWITCH_DISPLAY_MODE_TRANSLATION_KEY = "llor.message.switch_mode";
@@ -58,25 +61,25 @@ public class ConfigManager {
 
     ForgeConfigSpec.Builder configSpecBuilder = new ForgeConfigSpec.Builder();
 
-    configSpecBuilder
-        .comment(" The rendering radius. (default: " + config.getRenderingRadius() + ")");
+    configSpecBuilder.comment(" The rendering radius. (default: " + DEFAULT_RENDERING_RADIUS + ")");
     configSpecBuilder.push("renderingRadius");
-    renderingRadius = configSpecBuilder.defineInRange("chunks", config.getRenderingRadius(), 0, 15);
+    renderingRadius = configSpecBuilder.defineInRange("chunks", DEFAULT_RENDERING_RADIUS, 0, 15);
     configSpecBuilder.pop();
 
     configSpecBuilder.comment(
-        " The light level polling interval. Distant chunks will be updated less frequently. (default: "
-            + config.getPollingInterval() + ")");
+        " The polling interval. Light level overlays will be updated for every N client ticks.\n"
+            + " Distant chunks will be updated less frequently. (default: "
+            + DEFAULT_POLLING_INTERVAL + ")");
     configSpecBuilder.push("pollingInterval");
     pollingInterval =
-        configSpecBuilder.defineInRange("milliseconds", config.getPollingInterval(), 10, 2000);
+        configSpecBuilder.defineInRange("clientTicksPerUpdate", DEFAULT_POLLING_INTERVAL, 1, 100);
     configSpecBuilder.pop();
 
     configSpecBuilder.comment(" The current display mode. The default avaliable modes are:\n"
-        + " - Standard mode. Displays green and red numbers representing safe and spawnable areas in night.\n"
-        + " - Minimal mode. Only displays red numbers on spawnable blocks.\n"
-        + " - Advanced mode. With extra orange numbers for blocks which are safe in day time but spawnable in night.\n"
-        + " - X mode. Displays X on blocks instead of numbers.\n"
+        + " - standard mode. Displays green and red numbers representing safe and spawnable areas in night.\n"
+        + " - minimal mode. Only displays red numbers on spawnable blocks.\n"
+        + " - advanced mode. With extra orange numbers for blocks which are safe in day time but spawnable in night.\n"
+        + " - x mode. Displays X on blocks instead of numbers.\n"
         + " Custom display mode can be added or overridden using resource pack.");
     configSpecBuilder.push("displayMode");
     displayModeName = configSpecBuilder.define("name", DEFAULT_DISPLAY_MODE_NAME);

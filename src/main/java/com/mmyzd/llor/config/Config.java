@@ -41,8 +41,8 @@ public class Config {
 
     public Builder() {
       overlayEnabled = false;
-      renderingRadius = 3;
-      pollingInterval = 100;
+      renderingRadius = 0;
+      pollingInterval = 0;
       displayMode = DisplayMode.NULL;
     }
 
