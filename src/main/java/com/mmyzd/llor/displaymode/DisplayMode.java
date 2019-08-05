@@ -10,6 +10,8 @@ import net.minecraft.util.ResourceLocation;
 
 public class DisplayMode {
 
+  public static final DisplayMode NULL = new DisplayMode("<null>");
+
   private final String name;
   private final String displayName;
   private final double orderIndex;

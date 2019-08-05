@@ -26,6 +26,6 @@ public class LightLevelOverlayReloaded implements ForgeMod {
 
   @SubscribeEvent
   public static void onModConfigLoading(ModConfig.Loading event) {
-    configManager.loadConfigFromFile(event.getConfig());
+    configManager.loadConfig();
   }
 }

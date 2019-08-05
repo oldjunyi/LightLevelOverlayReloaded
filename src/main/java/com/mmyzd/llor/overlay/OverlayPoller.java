@@ -8,9 +8,11 @@ import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.multiplayer.ClientChunkProvider;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.EntityType;
+import net.minecraft.util.BlockRenderLayer;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.shapes.VoxelShape;
 import net.minecraft.world.LightType;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.ChunkStatus;
@@ -151,8 +153,8 @@ public class OverlayPoller extends Thread {
           if (!spawnBlockState.canEntitySpawn(chunk, spawnBlockPos, EntityType.ZOMBIE_PIGMAN)
               || !WorldEntitySpawner.isSpawnableSpace(chunk, upperBlockPos, upperBlockState,
                   upperBlockState.getFluidState())
-              || upperBlockState.getCollisionShape(world, upperBlockPos)
-                  .getEnd(Direction.Axis.Y) == 0) {
+              || upperBlockState.getCollisionShape(chunk, upperBlockPos)
+                  .getEnd(Direction.Axis.Y) > 0) {
             // Minecraft 1.14:
             // 1. Check canEntitySpawn() on spawn block for the spawning entities.
             // 2. Check isSpawnableSpace() for two blocks above the spawn block.
@@ -167,11 +169,11 @@ public class OverlayPoller extends Thread {
             continue;
           }
 
-          double renderingPosY = posY + 1.01;
-          if (upperBlockState.getShape(world, upperBlockPos).isEmpty()
-              && upperBlockState.isSolid()) {
-            renderingPosY += Math.max(
-                upperBlockState.getRenderShape(world, upperBlockPos).getEnd(Direction.Axis.Y), 0);
+          double renderingPosY = posY + 1.001;
+          if (upperBlockState.isSolid()) {
+            // Put numbers on top of solid-rendered blocks. E.g. the snow layer.
+            VoxelShape renderShape = upperBlockState.getRenderShape(chunk, upperBlockPos);
+            renderingPosY += Math.max(renderShape.getEnd(Direction.Axis.Y), 0);
           }
 
           int blockLight = lightmanager.getLightEngine(LightType.BLOCK).getLightFor(upperBlockPos);

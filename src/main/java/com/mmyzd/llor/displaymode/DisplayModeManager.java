@@ -55,7 +55,7 @@ public class DisplayModeManager {
 
   public DisplayMode getDisplayMode(String name) {
     DisplayMode displayMode = displayModeByName.get(name);
-    return displayMode != null ? displayMode : getFallbackDisplayMode();
+    return displayMode != null ? displayMode : DisplayMode.NULL;
   }
 
   public DisplayMode getNextDisplayMode(String name) {
@@ -64,11 +64,7 @@ public class DisplayModeManager {
         return displayModes[(index + 1) % displayModes.length];
       }
     }
-    return getFallbackDisplayMode();
-  }
-
-  private DisplayMode getFallbackDisplayMode() {
-    return displayModes.length > 0 ? displayModes[0] : new DisplayMode("<null>");
+    return displayModes.length > 0 ? displayModes[0] : DisplayMode.NULL;
   }
 
   public void onUpdate(Runnable updateHandler) {

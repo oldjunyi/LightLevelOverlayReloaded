@@ -23,6 +23,7 @@ import com.mmyzd.llor.message.MessagePresenter;
 
 public class ConfigManager {
 
+  private static final String DEFAULT_DISPLAY_MODE_NAME = "standard";
   private static final String TOGGLE_OVERLAY_ON_TRANSLATION_KEY = "llor.message.toggle_on";
   private static final String TOGGLE_OVERLAY_OFF_TRANSLATION_KEY = "llor.message.toggle_off";
   private static final String SWITCH_DISPLAY_MODE_TRANSLATION_KEY = "llor.message.switch_mode";
@@ -34,7 +35,6 @@ public class ConfigManager {
 
   private final KeyBinding hotkey;
 
-  private ModConfig modConfig;
   private final ForgeConfigSpec configSpec;
   private final ForgeConfigSpec.IntValue renderingRadius;
   private final ForgeConfigSpec.IntValue pollingInterval;
@@ -79,7 +79,7 @@ public class ConfigManager {
         + " - X mode. Displays X on blocks instead of numbers.\n"
         + " Custom display mode can be added or overridden using resource pack.");
     configSpecBuilder.push("displayMode");
-    displayModeName = configSpecBuilder.define("name", "standard");
+    displayModeName = configSpecBuilder.define("name", DEFAULT_DISPLAY_MODE_NAME);
     configSpecBuilder.pop();
 
     configSpecBuilder.comment(" User interaction announcement.");
@@ -123,12 +123,15 @@ public class ConfigManager {
                 MESSAGE_IDENTIFIER, MESSAGE_DURATION_TICKS));
       }
     } else if (KeyModifier.SHIFT.isActive(null) && config.isOverlayEnabled()) {
-      DisplayMode displayMode =
-          displayModeManager.getNextDisplayMode(config.getDisplayMode().getName());
+      DisplayMode displayMode = displayModeManager.getNextDisplayMode(displayModeName.get());
       configBuilder.setDisplayMode(displayMode);
       config = configBuilder.build();
-      modConfig.getConfigData().set(displayModeName.getPath(), displayMode.getName());
-      modConfig.save();
+      if (displayMode == DisplayMode.NULL) {
+        displayModeName.set(DEFAULT_DISPLAY_MODE_NAME);
+      } else {
+        displayModeName.set(displayMode.getName());
+      }
+      displayModeName.save();
       if (announcingWhenSwitchDisplayMode.get()) {
         messagePresenter.present(new FloatingMessage(
             I18n.format(SWITCH_DISPLAY_MODE_TRANSLATION_KEY, displayMode.getDisplayName()),
@@ -137,17 +140,14 @@ public class ConfigManager {
     }
   }
 
-  public void loadConfigFromFile(ModConfig modConfig) {
-    this.modConfig = modConfig;
+  public void loadConfig() {
     configBuilder.setRenderingRadius(renderingRadius.get());
     configBuilder.setPollingInterval(pollingInterval.get());
-    configBuilder.setDisplayMode(displayModeManager.getDisplayMode(displayModeName.get()));
-    config = configBuilder.build();
-    update();
+    loadDisplayMode();
   }
 
   private void loadDisplayMode() {
-    DisplayMode displayMode = displayModeManager.getDisplayMode(config.getDisplayMode().getName());
+    DisplayMode displayMode = displayModeManager.getDisplayMode(displayModeName.get());
     configBuilder.setDisplayMode(displayMode);
     config = configBuilder.build();
     update();
