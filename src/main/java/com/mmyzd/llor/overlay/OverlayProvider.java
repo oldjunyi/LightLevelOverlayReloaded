@@ -5,8 +5,8 @@ import com.mmyzd.llor.config.Config;
 import com.mmyzd.llor.config.ConfigManager;
 import com.mmyzd.llor.event.WeakEventSubscriber;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.TickEvent.ClientTickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.gameevent.TickEvent.ClientTickEvent;
 
 public class OverlayProvider {
 

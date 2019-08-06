@@ -17,7 +17,7 @@ The default shortcut key to turn on/off light level overlay is F4. You can chang
 [[dependencies.llor]]
 modId="forge"
 mandatory=true
-versionRange="[28,)"
+versionRange="[28.0.45,)"
 ordering="NONE"
 side="CLIENT"
 
