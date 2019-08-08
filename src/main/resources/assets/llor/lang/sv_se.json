@@ -1,7 +1,8 @@
 {
-    "key.llor.hotkey": "Sätt På/Av",
+    "key.llor.toggle": "Sätt På/Av",
+    "key.llor.switch_mode": "Nästa visningsläge",
     "key.categories.llor": "Light Level Overlay Reloaded",
-    "llor.message.switch_mode": "Light Level Overlay: %s läge",
+    "llor.message.switch_mode": "Light Level Overlay: %s",
     "llor.message.toggle_on": "Light Level Overlay: på",
     "llor.message.toggle_off": "Light Level Overlay: av",
     "llor.message.opening_error": "Light Level Overlay: Misslyckades med att öppna %s",

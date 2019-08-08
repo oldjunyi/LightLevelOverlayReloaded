@@ -59,19 +59,23 @@ public class DisplayModeManager {
   }
 
   public DisplayMode getNextDisplayMode(String name) {
-    for (int index = 0; index < displayModes.length; ++index) {
+    int size = displayModes.length;
+    for (int index = 0; index < size; ++index) {
       if (displayModes[index].getName().equals(name)) {
-        return displayModes[(index + 1) % displayModes.length];
+        return displayModes[(index + 1) % size];
       }
     }
-    return displayModes.length > 0 ? displayModes[0] : DisplayMode.NULL;
+    return size > 0 ? displayModes[0] : DisplayMode.NULL;
   }
 
   public void onUpdate(Runnable updateHandler) {
     updateHandlers.add(updateHandler);
   }
 
-  private void update() {
+  private void updateDisplayModes(Map<String, DisplayMode> displayModeByName) {
+    this.displayModeByName = displayModeByName;
+    this.displayModes = displayModeByName.values().stream()
+        .sorted(Comparator.comparingDouble(DisplayMode::getOrderIndex)).toArray(DisplayMode[]::new);
     for (Runnable updateHandler : updateHandlers) {
       updateHandler.run();
     }
@@ -115,10 +119,7 @@ public class DisplayModeManager {
         displayModeByName.put(name, displayMode);
       }
     }
-    this.displayModeByName = displayModeByName;
-    this.displayModes = displayModeByName.values().stream()
-        .sorted(Comparator.comparingDouble(DisplayMode::getOrderIndex)).toArray(DisplayMode[]::new);
-    update();
+    updateDisplayModes(displayModeByName);
   }
 
   private DisplayMode load(ResourceLocation resourceLocation, String name) {

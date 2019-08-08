@@ -1,7 +1,8 @@
 {
-    "key.llor.hotkey": "光照提示",
+    "key.llor.toggle": "开/关光照提示",
+    "key.llor.switch_mode": "切换至下一个显示模式",
     "key.categories.llor": "Light Level Overlay Reloaded"
-    "llor.message.switch_mode": "光照提示: %s 模式",
+    "llor.message.switch_mode": "光照提示: %s",
     "llor.message.toggle_on": "光照提示: 开启",
     "llor.message.toggle_off": "光照提示: 关闭",
     "llor.message.opening_error": "光照提示: 无法访问 %s",

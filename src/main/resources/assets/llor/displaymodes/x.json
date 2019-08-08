@@ -1,6 +1,6 @@
 {
     "display_name": "X",
-    "texture_path": "textures/overlay_small.png",
+    "texture_path": "textures/overlay.png",
     "texture_rows": 4,
     "texture_columns": 4,
     "order_index": 4,
@@ -9,7 +9,7 @@
         "0..7": {
             "sky_light": {
                 "0..7": [3, 0],
-                "8..15": [3, 2]
+                "8..15": [3, 1]
             }
         }
     }

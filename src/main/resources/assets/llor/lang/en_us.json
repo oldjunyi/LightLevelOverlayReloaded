@@ -1,7 +1,8 @@
 {
-    "key.llor.hotkey": "Toggle On/Off",
+    "key.llor.toggle": "Toggle On/Off",
+    "key.llor.switch_mode": "Next display mode",
     "key.categories.llor": "Light Level Overlay Reloaded",
-    "llor.message.switch_mode": "Light Level Overlay: %s mode",
+    "llor.message.switch_mode": "Light Level Overlay: %s",
     "llor.message.toggle_on": "Light Level Overlay: on",
     "llor.message.toggle_off": "Light Level Overlay: off",
     "llor.message.opening_error": "Light Level Overlay: failed to open %s",
