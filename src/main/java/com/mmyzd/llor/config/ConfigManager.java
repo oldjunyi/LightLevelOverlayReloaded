@@ -105,7 +105,6 @@ public class ConfigManager {
         + " - \"x\". Displays X on blocks instead of numbers.\n"
         + " Display modes can be changed or added using resource packs.");
     configSpecBuilder.push("displayMode");
-    configSpecBuilder.comment("Default: \"" + DEFAULT_DISPLAY_MODE_NAME + "\"");
     displayModeName = configSpecBuilder.define("name", DEFAULT_DISPLAY_MODE_NAME);
     configSpecBuilder.pop();
 
