@@ -1,11 +1,11 @@
 {
-    "key.llor.toggle": "Toggle On/Off",
-    "key.llor.switch_mode": "Next display mode",
     "key.categories.llor": "Light Level Overlay Reloaded",
-    "llor.message.switch_mode": "Light Level Overlay: %s",
-    "llor.message.toggle_on": "Light Level Overlay: on",
-    "llor.message.toggle_off": "Light Level Overlay: off",
-    "llor.message.opening_error": "Light Level Overlay: failed to open %s",
-    "llor.message.parsing_error": "Light Level Overlay: failed to parse %s",
-    "llor.message.binding_error": "Light Level Overlay: failed to bind texture for %s"
+    "key.llor.toggle": "Toggle Overlay",
+
+    "llor.message.toggle_on": "Light Level Overlay Reloaded: Overlay enabled",
+    "llor.message.toggle_off": "Light Level Overlay Reloaded: Overlay disabled",
+    "llor.message.switch_mode": "Light Level Overlay Reloaded: %s mode",
+    "llor.message.opening_error": "Light Level Overlay Reloaded: Failed to open %s",
+    "llor.message.parsing_error": "Light Level Overlay Reloaded: Failed to parse %s",
+    "llor.message.binding_error": "Light Level Overlay Reloaded: Failed to bind texture for %s"
 }

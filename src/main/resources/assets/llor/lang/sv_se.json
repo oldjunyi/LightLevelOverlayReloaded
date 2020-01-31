@@ -1,11 +1,11 @@
 {
-    "key.llor.toggle": "Sätt På/Av",
-    "key.llor.switch_mode": "Nästa visningsläge",
     "key.categories.llor": "Light Level Overlay Reloaded",
-    "llor.message.switch_mode": "Light Level Overlay: %s",
-    "llor.message.toggle_on": "Light Level Overlay: på",
-    "llor.message.toggle_off": "Light Level Overlay: av",
-    "llor.message.opening_error": "Light Level Overlay: Misslyckades med att öppna %s",
-    "llor.message.parsing_error": "Light Level Overlay: failed to parse %s",
-    "llor.message.binding_error": "Light Level Overlay: Misslyckades med att binda textur för %s"
+    "key.llor.toggle": "Sätt På/Av",
+
+    "llor.message.toggle_on": "Light Level Overlay Reloaded: på",
+    "llor.message.toggle_off": "Light Level Overlay Reloaded: av",
+    "llor.message.switch_mode": "Light Level Overlay Reloaded: %s läge",
+    "llor.message.opening_error": "Light Level Overlay Reloaded: Misslyckades med att öppna %s",
+    "llor.message.parsing_error": "Light Level Overlay Reloaded: Failed to parse %s",
+    "llor.message.binding_error": "Light Level Overlay Reloaded: Misslyckades med att binda textur för %s"
 }

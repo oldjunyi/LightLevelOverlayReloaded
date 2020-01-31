@@ -1,11 +1,11 @@
 {
+    "key.categories.llor": "Light Level Overlay Reloaded",
     "key.llor.toggle": "开/关光照提示",
-    "key.llor.switch_mode": "切换至下一个显示模式",
-    "key.categories.llor": "Light Level Overlay Reloaded"
-    "llor.message.switch_mode": "光照提示: %s",
-    "llor.message.toggle_on": "光照提示: 开启",
-    "llor.message.toggle_off": "光照提示: 关闭",
-    "llor.message.opening_error": "光照提示: 无法访问 %s",
-    "llor.message.parsing_error": "光照提示: 无法解析 %s",
-    "llor.message.binding_error": "光照提示: 无法为 %s 绑定贴图"
+
+    "llor.message.toggle_on": "Light Level Overlay Reloaded: 开启",
+    "llor.message.toggle_off": "Light Level Overlay Reloaded: 关闭",
+    "llor.message.switch_mode": "Light Level Overlay Reloaded: %s 模式",
+    "llor.message.opening_error": "Light Level Overlay Reloaded: 无法访问 %s",
+    "llor.message.parsing_error": "Light Level Overlay Reloaded: 无法解析 %s",
+    "llor.message.binding_error": "Light Level Overlay Reloaded: 无法为 %s 绑定贴图"
 }
